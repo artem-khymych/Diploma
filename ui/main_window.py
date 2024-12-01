@@ -78,8 +78,14 @@ class MainWindow(QMainWindow):
         self.text_editor = QTextEdit()
         self.text_editor.setPlaceholderText("Тут буде ваша робоча зона...")
         layout.addWidget(self.text_editor)
+    def init_right_area(self):
+        """Ініціалізація робочої зони."""
+        layout = QVBoxLayout(self.central_area)
 
-
+        # Робоча зона - великий текстовий редактор
+        self.text_editor = QTextEdit()
+        self.text_editor.setPlaceholderText("Тут буде ваша робоча зона...")
+        layout.addWidget(self.text_editor)
 
 
 if __name__ == "__main__":
