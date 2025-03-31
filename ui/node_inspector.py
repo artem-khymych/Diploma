@@ -1,23 +1,33 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QListWidgetItem, QWidget, QListWidget
-
-from project.controllers.basic_contoller import BasicController
-from project.controllers.node_controller import NodeController
+from PyQt5.QtWidgets import QListWidgetItem, QListWidget, QLabel, QVBoxLayout, QWidget
 
 
-class InspectorController(BasicController):
+class NodeInspector(QWidget):
     """Інспектор вузлів - відображає список вузлів та дозволяє ними керувати."""
 
-    def __init__(self, view, scene, node_view):
-        super().__init__(view)
-        self.node_controller = NodeController(scene, node_view)
-        self.nodes_list = self.view.findChild(QListWidget, "nodes_list")
+    def __init__(self, node_controller):
+        super().__init__()
+        self.node_controller = node_controller
+        self.init_ui()
+
+    def init_ui(self):
+        """Ініціалізація інтерфейсу інспектора."""
+        layout = QVBoxLayout(self)
+
+        # Заголовок інспектора
+        label = QLabel("Nodes Inspector")
+        label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        layout.addWidget(label)
+
+        # Список вузлів
+        self.nodes_list = QListWidget()
+        self.nodes_list.itemClicked.connect(self.on_item_clicked)
+        layout.addWidget(self.nodes_list)
 
         # Підключення до контролера вузлів
         self.node_controller.node_created.connect(self.add_node_to_inspector)
         self.node_controller.node_deleted.connect(self.remove_node_from_inspector)
         self.node_controller.node_renamed.connect(self.update_node_in_inspector)
-        self.nodes_list.itemClicked.connect(self.on_item_clicked)
 
     def add_node_to_inspector(self, node):
         """Додає вузол до інспектора."""

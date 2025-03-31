@@ -1,18 +1,20 @@
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout,
-    QFrame, QPushButton, QListWidget, QTextEdit, QWidget, QSplitter
+    QFrame, QPushButton, QListWidget, QTextEdit, QWidget, QSplitter, QScrollArea, QGraphicsScene, QLabel
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal, QObject
 
-from project.controllers.inspector_controller import InspectorController
-from project.ui.inspector_window import InspectorWindow
+from project.ui.basic_window import BasicWindow
+from project.ui.graphics_view import GraphicsView
 
 
 # TODO нижня панель із текстом
 # TODO бокова панель із результатами і даними
-# TODO маус зона і додавання ноди, промальовка та успадкування
+
+
 class MainWindow(QMainWindow):
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Робоче вікно з можливістю змінювати розміри зон")
@@ -35,57 +37,76 @@ class MainWindow(QMainWindow):
         self.splitter = QSplitter(Qt.Horizontal)
         self.central_area = QFrame()
         self.central_area.setFrameShape(QFrame.StyledPanel)
+
         self.init_central_area()
-
-        self.inspector = InspectorWindow()
-        self.inspector.setFrameShape(QFrame.StyledPanel)
-
-        # Додавання в спліттер
-        self.splitter.addWidget(self.inspector)
+        self.init_inspector()
+        self.splitter.addWidget(self.inspector_frame)
         self.splitter.addWidget(self.central_area)
 
-        self.splitter.setStretchFactor(1, 3)  # Робоча зона займає більше місця
-        self.splitter.setStretchFactor(0, 1)  # Права панель займає менше місця
+        self.splitter.setStretchFactor(0, 1)  # Робоча зона займає більше місця
+        self.splitter.setStretchFactor(1, 3)  # Права панель займає менше місця
 
         # Горизонтальне розташування з кнопками та спліттером
         center_layout = QHBoxLayout()
         center_layout.addWidget(self.splitter)
 
         main_layout.addLayout(center_layout, 10)
-        self.inspector_controller = InspectorController(self.inspector)
+
+        class SignalEmitter(QObject):
+            node_created = pyqtSignal(object)  # Сигнал створення вузла
+            node_deleted = pyqtSignal(int)  # Сигнал видалення вузла (передаємо ID)
+            node_renamed = pyqtSignal(object)  # Сигнал перейменування вузла
+            add_new_experiment = pyqtSignal()
+            open_settings = pyqtSignal()
+
+        self.signals = SignalEmitter()
+
+    def init_inspector(self):
+        """Ініціалізація інспектора вузлів."""
+        self.inspector_frame = BasicWindow()
+        # Заголовок інспектора
+        label = QLabel("Nodes Inspector")
+        label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        # Список вузлів
+        nodes_list = QListWidget()
+        nodes_list.setObjectName("nodes_list")
+        self.inspector_frame.layout.addWidget(label)
+        self.inspector_frame.layout.addWidget(nodes_list)
 
     def init_top_panel(self):
         """Ініціалізація верхньої панелі з кнопками."""
         layout = QHBoxLayout(self.top_panel)
 
         # Додати кнопки
-        self.btn_settings = QPushButton("Налаштування")
-        self.btn_start = QPushButton("Запуск")
-        self.btn_stop = QPushButton("Зупинка")
+        self.settings_button = QPushButton("Settings")
+        self.new_experiment_button = QPushButton("New experiment")
+        self.new_experiment_button.clicked.connect(self._add_new_experiment)
 
-        layout.addWidget(self.btn_settings)
-        layout.addWidget(self.btn_start)
-        layout.addWidget(self.btn_stop)
-
+        layout.addWidget(self.settings_button)
+        layout.addWidget(self.new_experiment_button)
         # Розтягнути панель
         layout.addStretch()
+
+    def _add_new_experiment(self):
+        self.signals.add_new_experiment.emit()
 
     def init_central_area(self):
         """Ініціалізація робочої зони."""
         layout = QVBoxLayout(self.central_area)
+        self.scene = QGraphicsScene()
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.graphics_view = GraphicsView()
+        self.graphics_view.setScene(self.scene)
 
-        # Робоча зона - великий текстовий редактор
-        self.text_editor = QTextEdit()
-        self.text_editor.setPlaceholderText("Тут буде ваша робоча зона...")
-        layout.addWidget(self.text_editor)
-    def init_right_area(self):
-        """Ініціалізація робочої зони."""
-        layout = QVBoxLayout(self.central_area)
+        self.central_widget = QWidget()
+        self.central_layout = QVBoxLayout(self.central_widget)
+        self.central_layout.addWidget(self.graphics_view)
+        self.scroll_area.setWidget(self.central_widget)
 
-        # Робоча зона - великий текстовий редактор
-        self.text_editor = QTextEdit()
-        self.text_editor.setPlaceholderText("Тут буде ваша робоча зона...")
-        layout.addWidget(self.text_editor)
+        self.central_area.setLayout(QVBoxLayout())
+        self.central_area.layout().addWidget(self.scroll_area)
+        self.central_area.setStyleSheet("background-color: white;")
 
 
 if __name__ == "__main__":
