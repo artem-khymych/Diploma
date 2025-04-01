@@ -1,0 +1,22 @@
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QPushButton
+
+from project.ui.parameter_editor_widget import ParameterEditorWidget
+
+
+class HyperparamsTabWidget(QWidget):
+    """Представлення для вкладки параметрів моделі (затичка)"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.params_widget = None
+        self.init_ui()
+
+    def init_ui(self):
+        """Ініціалізація інтерфейсу"""
+        layout = QVBoxLayout()
+        self.params_widget = ParameterEditorWidget()
+        self.params_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.save_button = QPushButton("Save")
+        layout.addWidget(self.params_widget)
+        layout.addWidget(self.save_button)
+        self.setLayout(layout)

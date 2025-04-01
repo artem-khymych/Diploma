@@ -1,31 +1,35 @@
 from project.logic.modules import task_names
+
+
 class InputDataParams:
 
     def __init__(self):
-        # Налаштування режиму роботи з даними
-        self.mode = 'single_file'  # 'single_file' або 'two_files'
+        self.mode = 'single_file'
 
-        # Шляхи до файлів
         self.single_file_path = ''
-        self.train_file_path = ''
-        self.test_file_path = ''
+        self.x_train_file_path = ''
+        self.y_train_file_path = ''
+        self.x_test_file_path = ''
+        self.y_test_file_path = ''
 
-        # Параметри розбиття
         self.train_percent = 80
         self.test_percent = 20
         self.seed = 42
 
-        # Цільова змінна
         self.target_variable = ''
 
-        # Кодування та роздільник для CSV
         self.single_file_encoding = 'utf-8'
-        self.train_file_encoding = 'utf-8'
-        self.test_file_encoding = 'utf-8'
-        self.single_file_separator = ','
-        self.train_file_separator = ','
+        self.x_train_file_encoding = 'utf-8'
+        self.y_train_file_encoding = 'utf-8'
+        self.x_test_file_encoding = 'utf-8'
+        self.y_test_file_encoding = 'utf-8'
 
-        # Поточне завдання
+        self.single_file_separator = ','
+        self.x_train_file_separator = ','
+        self.y_train_file_separator = ','
+        self.x_test_file_separator = ','
+        self.y_test_file_separator = ','
+
         self.current_task = ''
 
     def to_dict(self):
@@ -44,25 +48,48 @@ class InputDataParams:
                 'single_file_separator': self.single_file_separator
             })
 
-            # Додаємо цільову змінну лише якщо вона потрібна для завдання
             if self.target_variable and not self.is_target_not_required():
                 data['target_variable'] = self.target_variable
         else:
-            data.update({
-                'train_file_path': self.train_file_path,
-                'test_file_path': self.test_file_path,
-                'train_file_encoding': self.train_file_encoding,
-                'test_file_encoding': self.test_file_encoding,
-                'train_file_separator': self.train_file_separator
-            })
+            if self.is_target_not_required():
+                data.update({
+                    'x_train_file_path': self.x_train_file_path,
+                    'x_test_file_path': self.x_test_file_path,
+                    'x_train_file_encoding': self.x_train_file_encoding,
+                    'x_test_file_encoding': self.x_test_file_encoding,
+                    'x_train_file_separator': self.x_train_file_separator,
+                    'x_test_file_separator': self.x_test_file_separator
+                })
+            else:
+                data.update({
+                    'x_train_file_path': self.x_train_file_path,
+                    'y_train_file_path': self.y_train_file_path,
+                    'x_test_file_path': self.x_test_file_path,
+                    'y_test_file_path': self.y_test_file_path,
+                    'x_train_file_encoding': self.x_train_file_encoding,
+                    'y_train_file_encoding': self.y_train_file_encoding,
+                    'x_test_file_encoding': self.x_test_file_encoding,
+                    'y_test_file_encoding': self.y_test_file_encoding,
+                    'x_train_file_separator': self.x_train_file_separator,
+                    'y_train_file_separator': self.y_train_file_separator,
+                    'x_test_file_separator': self.x_test_file_separator,
+                    'y_test_file_separator': self.y_test_file_separator
+                })
 
         return data
 
     def is_target_not_required(self):
-        """Перевіряє, чи потрібен вибір цільової змінної для поточного завдання"""
         return self.current_task in InputDataParams.tasks_without_target
 
-    # Список завдань, для яких не потрібен вибір цільової змінної
+    def is_filled(self):
+        if self.mode == "single_file":
+            if self.single_file_path != "":
+                return True
+        else:
+            if self.x_test_file_path and self.x_train_file_path and self.y_train_file_path and self.y_test_file_path != "":
+                return True
+        return False
+
     tasks_without_target = [
         task_names.CLUSTERING,
         task_names.DIMENSIONALITY_REDUCTION,

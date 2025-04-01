@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import QMessageBox, QDialog
 
-from project.controllers.experiment_settings_dialog.tab_controllers import GeneralSettingsController, \
-    InputDataTabController, HyperparamsTabController, MetricsTabController
+from project.controllers.experiment_settings_dialog.general_tab_controller import GeneralSettingsController
+from project.controllers.experiment_settings_dialog.hyperparams_tab_controller import HyperparamsTabController
+from project.controllers.experiment_settings_dialog.input_data_tab_controller import InputDataTabController
+from project.controllers.experiment_settings_dialog.metrics_tab_controller import MetricsTabController
 from project.logic.experiment.experiment import Experiment
 
 from project.ui.experiment_settings_dialog.experiment_settings_dialog import ExperimentSettingsDialog
@@ -24,7 +26,11 @@ class ExperimentSettingsController:
 
         # Підключення сигналів
         self.dialog.ok_btn.setAutoDefault(False)
+        self.connect_signals()
+
+    def connect_signals(self):
         self.dialog.ok_btn.clicked.connect(self.on_accept)
+        self.general_controller.experiment_started.connect(self.experiment.run)
 
     def on_accept(self):
         """Обробка натискання кнопки OK"""
@@ -57,6 +63,8 @@ class ExperimentSettingsController:
             QMessageBox.warning(self.dialog, "Помилка", "Будь ласка, введіть назву експерименту.")
             self.dialog.tab_widget.setCurrentIndex(0)  # Перехід на вкладку "Загальні налаштування"
             return False
+        #TODO clear print
+        print(self.input_data_controller.input_data_params.to_dict())
 
         return True
 

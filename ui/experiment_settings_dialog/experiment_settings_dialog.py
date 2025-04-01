@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTabWidget, QHBoxLayout, QPushButton
 
-from project.ui.experiment_settings_dialog.tab_views import GeneralTabWidget, InputDataTabWidget, HyperparamsTabWidget, \
-    MetricsTabWidget
+from project.ui.experiment_settings_dialog.general_tab import GeneralTabWidget
+from project.ui.experiment_settings_dialog.hypeparams_tab import HyperparamsTabWidget
+from project.ui.experiment_settings_dialog.input_data_tab import InputDataTabWidget
+from project.ui.experiment_settings_dialog.metrics_tab import MetricsTabWidget
 
 
 class ExperimentSettingsDialog(QDialog):
