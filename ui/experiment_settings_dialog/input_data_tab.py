@@ -1,7 +1,7 @@
 import os
 
-from PyQt5.QtWidgets import QFileDialog, QGroupBox, QRadioButton, QHBoxLayout, QSpinBox, QLabel, QVBoxLayout, QComboBox, \
-    QPushButton, QLineEdit, QWidget
+from PyQt5.QtWidgets import (QFileDialog, QGroupBox, QRadioButton, QHBoxLayout, QSpinBox, QLabel,
+                             QVBoxLayout, QComboBox, QPushButton, QLineEdit, QWidget, QCheckBox)
 
 
 class InputDataTabWidget(QWidget):
@@ -27,6 +27,12 @@ class InputDataTabWidget(QWidget):
         self.single_file_layout.addWidget(self.single_file_path)
         self.single_file_layout.addWidget(self.single_file_btn)
         single_file_layout.addLayout(self.single_file_layout)
+
+        # Група для кодування з чекбоксом
+        self.single_encoding_group = QHBoxLayout()
+        self.single_manual_encoding_checkbox = QCheckBox("Ручне налаштування кодування")
+        self.single_encoding_group.addWidget(self.single_manual_encoding_checkbox)
+        single_file_layout.addLayout(self.single_encoding_group)
 
         self.single_encoding_layout = QHBoxLayout()
         self.single_encoding_label = QLabel("Кодування:")
@@ -57,6 +63,35 @@ class InputDataTabWidget(QWidget):
         self.multi_files_group = QGroupBox("Налаштування для декількох файлів")
         multi_files_layout = QVBoxLayout()
 
+        # Група для спільних налаштувань у режимі кількох файлів
+        self.multi_common_settings_group = QGroupBox("Спільні налаштування для всіх файлів")
+        multi_common_settings_layout = QVBoxLayout()
+
+        # Чекбокс для ручного налаштування кодування (режим кількох файлів)
+        self.multi_manual_encoding_checkbox = QCheckBox("Ручне налаштування кодування та роздільника")
+        multi_common_settings_layout.addWidget(self.multi_manual_encoding_checkbox)
+
+        # Спільне кодування для всіх файлів
+        self.multi_encoding_layout = QHBoxLayout()
+        self.multi_encoding_label = QLabel("Кодування для всіх файлів:")
+        self.multi_encoding_combo = QComboBox()
+        self.multi_encoding_combo.addItems(["utf-8", "cp1251", "latin-1", "iso-8859-1", "ascii"])
+        self.multi_encoding_layout.addWidget(self.multi_encoding_label)
+        self.multi_encoding_layout.addWidget(self.multi_encoding_combo)
+        multi_common_settings_layout.addLayout(self.multi_encoding_layout)
+
+        # Спільний роздільник для всіх файлів
+        self.multi_separator_layout = QHBoxLayout()
+        self.multi_separator_label = QLabel("Роздільник CSV для всіх файлів:")
+        self.multi_separator_combo = QComboBox()
+        self.multi_separator_combo.addItems([",", ";", "\\t", "|", " "])
+        self.multi_separator_layout.addWidget(self.multi_separator_label)
+        self.multi_separator_layout.addWidget(self.multi_separator_combo)
+        multi_common_settings_layout.addLayout(self.multi_separator_layout)
+
+        self.multi_common_settings_group.setLayout(multi_common_settings_layout)
+        multi_files_layout.addWidget(self.multi_common_settings_group)
+
         # X_train секція
         self.x_train_group = QGroupBox("Тренувальні дані для навчання (X_train)")
         x_train_layout = QVBoxLayout()
@@ -69,22 +104,6 @@ class InputDataTabWidget(QWidget):
         x_train_path_layout.addWidget(self.x_train_file_path)
         x_train_path_layout.addWidget(self.x_train_file_btn)
         x_train_layout.addLayout(x_train_path_layout)
-
-        x_train_encoding_layout = QHBoxLayout()
-        self.x_train_encoding_label = QLabel("Кодування:")
-        self.x_train_encoding_combo = QComboBox()
-        self.x_train_encoding_combo.addItems(["utf-8", "cp1251", "latin-1", "iso-8859-1", "ascii"])
-        x_train_encoding_layout.addWidget(self.x_train_encoding_label)
-        x_train_encoding_layout.addWidget(self.x_train_encoding_combo)
-        x_train_layout.addLayout(x_train_encoding_layout)
-
-        x_train_separator_layout = QHBoxLayout()
-        self.x_train_separator_label = QLabel("Роздільник CSV:")
-        self.x_train_separator_combo = QComboBox()
-        self.x_train_separator_combo.addItems([",", ";", "\\t", "|", " "])
-        x_train_separator_layout.addWidget(self.x_train_separator_label)
-        x_train_separator_layout.addWidget(self.x_train_separator_combo)
-        x_train_layout.addLayout(x_train_separator_layout)
 
         self.x_train_group.setLayout(x_train_layout)
         multi_files_layout.addWidget(self.x_train_group)
@@ -102,22 +121,6 @@ class InputDataTabWidget(QWidget):
         y_train_path_layout.addWidget(self.y_train_file_btn)
         y_train_layout.addLayout(y_train_path_layout)
 
-        y_train_encoding_layout = QHBoxLayout()
-        self.y_train_encoding_label = QLabel("Кодування:")
-        self.y_train_encoding_combo = QComboBox()
-        self.y_train_encoding_combo.addItems(["utf-8", "cp1251", "latin-1", "iso-8859-1", "ascii"])
-        y_train_encoding_layout.addWidget(self.y_train_encoding_label)
-        y_train_encoding_layout.addWidget(self.y_train_encoding_combo)
-        y_train_layout.addLayout(y_train_encoding_layout)
-
-        y_train_separator_layout = QHBoxLayout()
-        self.y_train_separator_label = QLabel("Роздільник CSV:")
-        self.y_train_separator_combo = QComboBox()
-        self.y_train_separator_combo.addItems([",", ";", "\\t", "|", " "])
-        y_train_separator_layout.addWidget(self.y_train_separator_label)
-        y_train_separator_layout.addWidget(self.y_train_separator_combo)
-        y_train_layout.addLayout(y_train_separator_layout)
-
         self.y_train_group.setLayout(y_train_layout)
         multi_files_layout.addWidget(self.y_train_group)
 
@@ -134,22 +137,6 @@ class InputDataTabWidget(QWidget):
         x_test_path_layout.addWidget(self.x_test_file_btn)
         x_test_layout.addLayout(x_test_path_layout)
 
-        x_test_encoding_layout = QHBoxLayout()
-        self.x_test_encoding_label = QLabel("Кодування:")
-        self.x_test_encoding_combo = QComboBox()
-        self.x_test_encoding_combo.addItems(["utf-8", "cp1251", "latin-1", "iso-8859-1", "ascii"])
-        x_test_encoding_layout.addWidget(self.x_test_encoding_label)
-        x_test_encoding_layout.addWidget(self.x_test_encoding_combo)
-        x_test_layout.addLayout(x_test_encoding_layout)
-
-        x_test_separator_layout = QHBoxLayout()
-        self.x_test_separator_label = QLabel("Роздільник CSV:")
-        self.x_test_separator_combo = QComboBox()
-        self.x_test_separator_combo.addItems([",", ";", "\\t", "|", " "])
-        x_test_separator_layout.addWidget(self.x_test_separator_label)
-        x_test_separator_layout.addWidget(self.x_test_separator_combo)
-        x_test_layout.addLayout(x_test_separator_layout)
-
         self.x_test_group.setLayout(x_test_layout)
         multi_files_layout.addWidget(self.x_test_group)
 
@@ -165,22 +152,6 @@ class InputDataTabWidget(QWidget):
         y_test_path_layout.addWidget(self.y_test_file_path)
         y_test_path_layout.addWidget(self.y_test_file_btn)
         y_test_layout.addLayout(y_test_path_layout)
-
-        y_test_encoding_layout = QHBoxLayout()
-        self.y_test_encoding_label = QLabel("Кодування:")
-        self.y_test_encoding_combo = QComboBox()
-        self.y_test_encoding_combo.addItems(["utf-8", "cp1251", "latin-1", "iso-8859-1", "ascii"])
-        y_test_encoding_layout.addWidget(self.y_test_encoding_label)
-        y_test_encoding_layout.addWidget(self.y_test_encoding_combo)
-        y_test_layout.addLayout(y_test_encoding_layout)
-
-        y_test_separator_layout = QHBoxLayout()
-        self.y_test_separator_label = QLabel("Роздільник CSV:")
-        self.y_test_separator_combo = QComboBox()
-        self.y_test_separator_combo.addItems([",", ";", "\\t", "|", " "])
-        y_test_separator_layout.addWidget(self.y_test_separator_label)
-        y_test_separator_layout.addWidget(self.y_test_separator_combo)
-        y_test_layout.addLayout(y_test_separator_layout)
 
         self.y_test_group.setLayout(y_test_layout)
         multi_files_layout.addWidget(self.y_test_group)
@@ -217,15 +188,144 @@ class InputDataTabWidget(QWidget):
         self.split_group.setLayout(split_layout)
         main_layout.addWidget(self.split_group)
 
+
+        self.setLayout(main_layout)
+
+        # Ініціалізація стану кодування
+        self.single_manual_encoding_checkbox.setChecked(False)
+        self.multi_manual_encoding_checkbox.setChecked(False)
+        self.update_encoding_fields_visibility()
+
+        # Додаємо групу для обробки категоріальних змінних
+        self.categorical_encoding_group = QGroupBox("Обробка категоріальних змінних")
+        categorical_encoding_layout = QVBoxLayout()
+
+        # Інструкція або пояснення для користувача
+        categorical_info_label = QLabel("Виберіть метод кодування категоріальних змінних:")
+        categorical_encoding_layout.addWidget(categorical_info_label)
+
+        # Створюємо горизонтальний контейнер для радіокнопок
+        encoding_options_layout = QHBoxLayout()
+
+        # Створюємо радіокнопки для вибору методу кодування
+        self.one_hot_radio = QRadioButton("One-Hot Encoding")
+
+        self.dummy_radio = QRadioButton("to_categorical")
+
+        # Додаємо радіокнопки до горизонтального контейнера
+        encoding_options_layout.addWidget(self.one_hot_radio)
+        encoding_options_layout.addWidget(self.dummy_radio)
+
+        # Додаємо контейнер з радіокнопками до основного контейнера групи
+        categorical_encoding_layout.addLayout(encoding_options_layout)
+
+        # За замовчуванням вибираємо one-hot encoding
+        self.one_hot_radio.setChecked(True)
+
+        # Встановлюємо макет для групи
+        self.categorical_encoding_group.setLayout(categorical_encoding_layout)
+
+        # Додаємо групу до головного макету
+        main_layout.addWidget(self.categorical_encoding_group)
+
         main_layout.addStretch()
 
         self.setLayout(main_layout)
 
+        # Ініціалізація стану кодування
+        self.single_manual_encoding_checkbox.setChecked(False)
+        self.multi_manual_encoding_checkbox.setChecked(False)
+        self.update_encoding_fields_visibility()
+
+        # Встановлюємо видимість полів роздільників
         self.show_separator_fields(self.single_file_path.text(), 'single')
-        self.show_separator_fields(self.x_train_file_path.text(), 'x_train')
-        self.show_separator_fields(self.x_test_file_path.text(), 'x_test')
-        self.show_separator_fields(self.y_train_file_path.text(), 'y_train')
-        self.show_separator_fields(self.y_test_file_path.text(), 'y_test')
+
+    def load_input_data_params(self, input_data_params):
+        """
+        Заповнює поля віджета даними з об'єкта InputDataParams
+
+        Parameters:
+        input_data_params (InputDataParams): Об'єкт з параметрами вхідних даних
+        """
+        if not input_data_params.is_filled():
+            return
+
+        # Встановлюємо режим
+        if input_data_params.mode == 'single_file':
+            self.single_file_radio.setChecked(True)
+            self.update_ui_state(single_file_mode=True,
+                                 supervised_learning=not input_data_params.is_target_not_required())
+
+            # Заповнюємо шлях до файлу
+            if input_data_params.single_file_path:
+                self.single_file_path.setText(input_data_params.single_file_path)
+
+            # Параметри розбиття
+            self.train_percent.setValue(input_data_params.train_percent)
+            self.test_percent.setText(f"{input_data_params.test_percent}%")
+            self.seed_spinbox.setValue(input_data_params.seed)
+
+            # Якщо у файлі є цільова змінна і вона потрібна для поточного завдання
+            if input_data_params.target_variable and not input_data_params.is_target_not_required():
+                self.update_target_field_visibility(True)
+                # Потрібно спочатку заповнити комбобокс із колонками з файлу
+                # і потім встановити вибрану target_variable
+                # Цей код має бути викликаний після завантаження файлу
+                index = self.target_combo.findText(input_data_params.target_variable)
+                if index >= 0:
+                    self.target_combo.setCurrentIndex(index)
+            else:
+                self.update_target_field_visibility(not input_data_params.is_target_not_required())
+        else:
+            # Режим з кількома файлами
+            self.multi_files_radio.setChecked(True)
+            self.update_ui_state(single_file_mode=False,
+                                 supervised_learning=not input_data_params.is_target_not_required())
+
+            # Заповнюємо шляхи до файлів
+            if input_data_params.x_train_file_path:
+                self.x_train_file_path.setText(input_data_params.x_train_file_path)
+
+            if input_data_params.x_test_file_path:
+                self.x_test_file_path.setText(input_data_params.x_test_file_path)
+
+            # Додаємо y-файли тільки для задач з учителем
+            if not input_data_params.is_target_not_required():
+                if input_data_params.y_train_file_path:
+                    self.y_train_file_path.setText(input_data_params.y_train_file_path)
+
+                if input_data_params.y_test_file_path:
+                    self.y_test_file_path.setText(input_data_params.y_test_file_path)
+
+        # Налаштування кодування для обох режимів
+        if input_data_params.file_encoding != 'utf-8' or input_data_params.file_separator != ',':
+            if input_data_params.mode == 'single_file':
+                self.single_manual_encoding_checkbox.setChecked(True)
+                index = self.single_encoding_combo.findText(input_data_params.file_encoding)
+                if index >= 0:
+                    self.single_encoding_combo.setCurrentIndex(index)
+
+                index = self.single_separator_combo.findText(input_data_params.file_separator)
+                if index >= 0:
+                    self.single_separator_combo.setCurrentIndex(index)
+            else:
+                self.multi_manual_encoding_checkbox.setChecked(True)
+                index = self.multi_encoding_combo.findText(input_data_params.file_encoding)
+                if index >= 0:
+                    self.multi_encoding_combo.setCurrentIndex(index)
+
+                index = self.multi_separator_combo.findText(input_data_params.file_separator)
+                if index >= 0:
+                    self.multi_separator_combo.setCurrentIndex(index)
+
+        # Оновлюємо видимість полів кодування
+        self.update_encoding_fields_visibility()
+
+        # Налаштування обробки категоріальних змінних
+        if input_data_params.categorical_encoding == 'one-hot':
+            self.one_hot_radio.setChecked(True)
+        elif input_data_params.categorical_encoding == 'to_categorical':
+            self.dummy_radio.setChecked(True)
 
     def create_data_mode_group(self):
         self.data_mode_group = QGroupBox("Режим роботи з даними")
@@ -248,6 +348,21 @@ class InputDataTabWidget(QWidget):
             self.y_train_group.setVisible(supervised_learning)
             self.y_test_group.setVisible(supervised_learning)
 
+    def update_encoding_fields_visibility(self):
+        # Для одиночного файлу
+        single_manual_mode = self.single_manual_encoding_checkbox.isChecked()
+        self.single_encoding_label.setVisible(single_manual_mode)
+        self.single_encoding_combo.setVisible(single_manual_mode)
+        self.single_separator_label.setVisible(single_manual_mode and self.is_csv_file(self.single_file_path.text()))
+        self.single_separator_combo.setVisible(single_manual_mode and self.is_csv_file(self.single_file_path.text()))
+
+        # Для кількох файлів
+        multi_manual_mode = self.multi_manual_encoding_checkbox.isChecked()
+        self.multi_encoding_label.setVisible(multi_manual_mode)
+        self.multi_encoding_combo.setVisible(multi_manual_mode)
+        self.multi_separator_label.setVisible(multi_manual_mode)
+        self.multi_separator_combo.setVisible(multi_manual_mode)
+
     def update_test_percent(self, train_value):
         self.test_percent.setText(f"{100 - train_value}%")
 
@@ -256,45 +371,27 @@ class InputDataTabWidget(QWidget):
             self, title, "", file_filter
         )
 
-    def show_separator_fields(self, file_path, file_type):
+    def is_csv_file(self, file_path):
         if not file_path:
-            if file_type == 'single':
-                self.single_separator_label.setVisible(False)
-                self.single_separator_combo.setVisible(False)
-            elif file_type == 'x_train':
-                self.x_train_separator_label.setVisible(False)
-                self.x_train_separator_combo.setVisible(False)
-            elif file_type == 'y_train':
-                self.y_train_separator_label.setVisible(False)
-                self.y_train_separator_combo.setVisible(False)
-            elif file_type == 'x_test':
-                self.x_test_separator_label.setVisible(False)
-                self.x_test_separator_combo.setVisible(False)
-            elif file_type == 'y_test':
-                self.y_test_separator_label.setVisible(False)
-                self.y_test_separator_combo.setVisible(False)
-            return
-
+            return False
         ext = os.path.splitext(file_path)[1].lower()
-        is_csv = ext == '.csv'
+        return ext == '.csv'
+
+    def show_separator_fields(self, file_path, file_type):
+        is_csv = self.is_csv_file(file_path)
 
         if file_type == 'single':
-            self.single_separator_label.setVisible(is_csv)
-            self.single_separator_combo.setVisible(is_csv)
-        elif file_type == 'x_train':
-            self.x_train_separator_label.setVisible(is_csv)
-            self.x_train_separator_combo.setVisible(is_csv)
-        elif file_type == 'y_train':
-            self.y_train_separator_label.setVisible(is_csv)
-            self.y_train_separator_combo.setVisible(is_csv)
-        elif file_type == 'x_test':
-            self.x_test_separator_label.setVisible(is_csv)
-            self.x_test_separator_combo.setVisible(is_csv)
-        elif file_type == 'y_test':
-            self.y_test_separator_label.setVisible(is_csv)
-            self.y_test_separator_combo.setVisible(is_csv)
+            manual_mode = self.single_manual_encoding_checkbox.isChecked()
+            self.single_separator_label.setVisible(is_csv and manual_mode)
+            self.single_separator_combo.setVisible(is_csv and manual_mode)
 
     def update_target_field_visibility(self, should_show):
         self.target_label.setVisible(should_show)
         self.target_combo.setVisible(should_show)
 
+    def get_categorical_encoding_method(self):
+        if self.one_hot_radio.isChecked():
+            return "one-hot"
+        elif self.dummy_radio.isChecked():
+            return "to_categorical"
+        return "one-hot"  # За замовчуванням

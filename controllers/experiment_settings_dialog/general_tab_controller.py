@@ -6,19 +6,15 @@ from project.ui.experiment_settings_dialog.general_tab import GeneralTabWidget
 
 class GeneralSettingsController(QObject):
     """Контролер для вкладки загальних налаштувань"""
-
-    # Сигнал для сповіщення про запуск експерименту
-    experiment_started = pyqtSignal()
-
     # Сигнал для сповіщення про завершення експерименту
-    experiment_finished = pyqtSignal(float)  # Параметр - час навчання в секундах
+    #experiment_finished = pyqtSignal(float)  # Параметр - час навчання в секундах
 
     def __init__(self, experiment: Experiment, view: GeneralTabWidget) -> None:
         super().__init__()
         self.experiment = experiment
         self.view = view
         self.init_view()
-        self.connect_signals()
+        #self.connect_signals()
 
     def init_view(self):
         """Ініціалізація початкового стану представлення"""
@@ -41,18 +37,7 @@ class GeneralSettingsController(QObject):
         self.view.experiment_name.setText(name)
 
     def connect_signals(self):
-        """Підключення сигналів"""
-        # Підключаємо сигнал запуску експерименту з представлення
-        self.view.experiment_start_signal.connect(self.start_experiment)
-        self.experiment_finished.connect(self.on_experiment_finished)
-
-    def start_experiment(self):
-        """Обробник запуску експерименту"""
-        # Заглушка для перевірки параметрів
-        if not self.experiment.is_finished and self.experiment.input_data_params.is_filled():
-            print("Запуск експерименту...")
-            #TODO add final check method via manager
-            self.experiment_started.emit()
+        pass
 
     def on_experiment_finished(self, training_time):
         """Обробник завершення експерименту"""

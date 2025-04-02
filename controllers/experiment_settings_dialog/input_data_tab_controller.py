@@ -7,7 +7,7 @@ from project.logic.experiment.experiment import Experiment
 
 
 class InputDataTabController(TabController):
-    """Контролер для вкладки параметрів машинного навчання"""
+    """Контролер для вкладки параметрів вводу даних"""
 
     def __init__(self, experiment: Experiment, view):
         super().__init__(experiment, view)
@@ -41,29 +41,23 @@ class InputDataTabController(TabController):
         # Цільова змінна
         self.view.target_combo.currentTextChanged.connect(self.on_target_changed)
 
-        # Кодування
+        # Чекбокси для ручного налаштування кодування
+        self.view.single_manual_encoding_checkbox.toggled.connect(self.on_manual_encoding_toggled)
+        self.view.multi_manual_encoding_checkbox.toggled.connect(self.on_manual_encoding_toggled)
+
+        # Кодування для одиночного файла
         self.view.single_encoding_combo.currentTextChanged.connect(
             lambda text: self.on_encoding_changed('single', text))
-        self.view.x_train_encoding_combo.currentTextChanged.connect(
-            lambda text: self.on_encoding_changed('x_train', text))
-        self.view.y_train_encoding_combo.currentTextChanged.connect(
-            lambda text: self.on_encoding_changed('y_train', text))
-        self.view.x_test_encoding_combo.currentTextChanged.connect(
-            lambda text: self.on_encoding_changed('x_test', text))
-        self.view.y_test_encoding_combo.currentTextChanged.connect(
-            lambda text: self.on_encoding_changed('y_test', text))
 
-        # Роздільники
+        # Кодування та роздільники для мульти-файлового режиму (загальні)
+        self.view.multi_encoding_combo.currentTextChanged.connect(
+            lambda text: self.on_multi_encoding_changed(text))
+        self.view.multi_separator_combo.currentTextChanged.connect(
+            lambda text: self.on_multi_separator_changed(text))
+
+        # Роздільник для одиночного файла
         self.view.single_separator_combo.currentTextChanged.connect(
             lambda text: self.on_separator_changed('single', text))
-        self.view.x_train_separator_combo.currentTextChanged.connect(
-            lambda text: self.on_separator_changed('x_train', text))
-        self.view.y_train_separator_combo.currentTextChanged.connect(
-            lambda text: self.on_separator_changed('y_train', text))
-        self.view.x_test_separator_combo.currentTextChanged.connect(
-            lambda text: self.on_separator_changed('x_test', text))
-        self.view.y_test_separator_combo.currentTextChanged.connect(
-            lambda text: self.on_separator_changed('y_test', text))
 
         # Seed значення
         self.view.seed_spinbox.valueChanged.connect(lambda value: setattr(self.input_data_params, 'seed', value))
@@ -76,6 +70,10 @@ class InputDataTabController(TabController):
         supervised_learning = not self.input_data_params.is_target_not_required()
         self.view.update_ui_state(single_file_mode=True, supervised_learning=supervised_learning)
         self.view.update_target_field_visibility(supervised_learning)
+
+        # Встановлюємо початковий стан для полів кодування
+        self.view.update_encoding_fields_visibility()
+        self.view.load_input_data_params(self.input_data_params)
 
     def on_mode_changed(self):
         single_file_mode = self.view.single_file_radio.isChecked()
@@ -92,33 +90,30 @@ class InputDataTabController(TabController):
     def on_target_changed(self, value):
         self.input_data_params.target_variable = value
 
+    def on_manual_encoding_toggled(self):
+        # Оновлюємо видимість полів кодування та роздільників
+        self.view.update_encoding_fields_visibility()
+
     def on_encoding_changed(self, file_type, value):
         if file_type == 'single':
-            self.input_data_params.single_file_encoding = value
+            self.input_data_params.file_encoding = value
             if self.input_data_params.single_file_path:
                 self.load_column_names(self.input_data_params.single_file_path)
-        elif file_type == 'x_train':
-            self.input_data_params.x_train_file_encoding = value
-        elif file_type == 'y_train':
-            self.input_data_params.y_train_file_encoding = value
-        elif file_type == 'x_test':
-            self.input_data_params.x_test_file_encoding = value
-        elif file_type == 'y_test':
-            self.input_data_params.y_test_file_encoding = value
+
+    def on_multi_encoding_changed(self, value):
+        # Оновлюємо значення кодування для всіх файлів в режимі multi_files
+        self.input_data_params.file_encoding = value
 
     def on_separator_changed(self, file_type, value):
         if file_type == 'single':
-            self.input_data_params.single_file_separator = value
-            if self.input_data_params.single_file_path and os.path.splitext(self.input_data_params.single_file_path)[1].lower() == '.csv':
+            self.input_data_params.file_separator = value
+            if self.input_data_params.single_file_path and os.path.splitext(self.input_data_params.single_file_path)[
+                1].lower() == '.csv':
                 self.load_column_names(self.input_data_params.single_file_path)
-        elif file_type == 'x_train':
-            self.input_data_params.x_train_file_separator = value
-        elif file_type == 'y_train':
-            self.input_data_params.y_train_file_separator = value
-        elif file_type == 'x_test':
-            self.input_data_params.x_test_file_separator = value
-        elif file_type == 'y_test':
-            self.input_data_params.y_test_file_separator = value
+
+    def on_multi_separator_changed(self, value):
+        # Оновлюємо значення роздільника для всіх файлів в режимі multi_files
+        self.input_data_params.file_separator = value
 
     def on_file_path_changed(self, path, file_type):
         """Обробник зміни шляху до файлу (для відображення/приховування полів роздільника)"""
@@ -127,8 +122,13 @@ class InputDataTabController(TabController):
         # Оновлюємо відповідне поле в моделі
         if file_type == 'single':
             self.input_data_params.single_file_path = path
+            # Автоматично визначаємо кодування і роздільник, якщо не ввімкнено ручний режим
+            if not self.view.single_manual_encoding_checkbox.isChecked() and path:
+                self.auto_detect_format(path, 'single')
         elif file_type == 'x_train':
             self.input_data_params.x_train_file_path = path
+            if not self.view.multi_manual_encoding_checkbox.isChecked() and path:
+                self.auto_detect_format(path, 'multi')
         elif file_type == 'y_train':
             self.input_data_params.y_train_file_path = path
         elif file_type == 'x_test':
@@ -144,7 +144,14 @@ class InputDataTabController(TabController):
         if file:
             self.input_data_params.single_file_path = file
             self.view.single_file_path.setText(file)
-            self.load_column_names(file)
+
+            # Автоматично визначаємо кодування і роздільник, якщо не ввімкнено ручний режим
+            if not self.view.single_manual_encoding_checkbox.isChecked():
+                success = self.auto_detect_format(file, 'single')
+                if success:
+                    self.load_column_names(file)
+            else:
+                self.load_column_names(file)
 
     def browse_file(self, file_type):
         title_map = {
@@ -161,6 +168,9 @@ class InputDataTabController(TabController):
             if file_type == 'x_train':
                 self.input_data_params.x_train_file_path = file
                 self.view.x_train_file_path.setText(file)
+                # Автоматично визначаємо кодування і роздільник для всіх файлів
+                if not self.view.multi_manual_encoding_checkbox.isChecked():
+                    self.auto_detect_format(file, 'multi')
             elif file_type == 'y_train':
                 self.input_data_params.y_train_file_path = file
                 self.view.y_train_file_path.setText(file)
@@ -170,6 +180,62 @@ class InputDataTabController(TabController):
             elif file_type == 'y_test':
                 self.input_data_params.y_test_file_path = file
                 self.view.y_test_file_path.setText(file)
+
+    def auto_detect_format(self, file_path, mode='single'):
+        """Автоматично визначає кодування і роздільник CSV файлу"""
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext != '.csv':
+            return False
+
+        encodings = ['utf-8', 'cp1251', 'latin-1', 'iso-8859-1', 'ascii']
+        separators = [',', ';', '\t', '|', ' ']
+
+        import pandas as pd
+
+        for encoding in encodings:
+            for separator in separators:
+                try:
+                    df = pd.read_csv(file_path, nrows=5, encoding=encoding, sep=separator)
+                    if len(df.columns) > 1:  # Перевіряємо, чи було успішно розпізнано кілька стовпців
+                        # Оновлюємо значення в моделі та інтерфейсі в залежності від режиму
+                        if mode == 'single':
+                            self.input_data_params.file_encoding = encoding
+                            self.view.single_encoding_combo.setCurrentText(encoding)
+                            self.input_data_params.file_separator = self.get_separator_display(separator)
+                            self.view.single_separator_combo.setCurrentText(self.get_separator_display(separator))
+                        else:  # multi
+                            # Оновлюємо значення для всіх файлів в режимі multi_files
+                            self.input_data_params.file_encoding = encoding
+                            self.view.multi_encoding_combo.setCurrentText(encoding)
+
+                            self.input_data_params.file_separator = self.get_separator_display(separator)
+                            self.view.multi_separator_combo.setCurrentText(self.get_separator_display(separator))
+
+                        # Якщо це одиночний файл, оновлюємо випадаючий список цільових змінних
+                        if mode == 'single':
+                            self.view.target_combo.clear()
+                            self.view.target_combo.addItems([str(col) for col in df.columns.tolist()])
+                            if df.columns.tolist():
+                                self.input_data_params.target_variable = str(df.columns.tolist()[0])
+
+                        return True
+                except Exception:
+                    continue
+
+        # Якщо автоматичне визначення не вдалося, показуємо повідомлення
+        QMessageBox.warning(
+            self.view,
+            "Не вдалося визначити формат",
+            "Не вдалося автоматично визначити кодування та роздільник файлу. Будь ласка, виберіть їх вручну."
+        )
+
+        # Ввімкнути чекбокс ручного налаштування
+        if mode == 'single':
+            self.view.single_manual_encoding_checkbox.setChecked(True)
+        else:
+            self.view.multi_manual_encoding_checkbox.setChecked(True)
+
+        return False
 
     def load_column_names(self, file_path):
         """Завантажує імена стовпців з файлу і встановлює їх у випадаючий список"""
@@ -188,13 +254,13 @@ class InputDataTabController(TabController):
                     df = pd.read_csv(
                         file_path,
                         nrows=1,
-                        encoding=self.input_data_params.single_file_encoding,
-                        sep=self.convert_separator(self.input_data_params.single_file_separator)
+                        encoding=self.input_data_params.file_encoding,
+                        sep=self.convert_separator(self.input_data_params.file_separator)
                     )
                     column_names = [str(col) for col in df.columns.tolist()]
                 except Exception as e:
                     print(f"Помилка читання CSV: {e}")
-                    self.try_different_encodings(file_path)
+                    # Не викликаємо try_different_encodings, бо тепер у нас є auto_detect_format
 
             elif ext in ['.xlsx', '.xls']:
                 try:
@@ -214,11 +280,12 @@ class InputDataTabController(TabController):
             elif ext == '.json':
                 try:
                     import pandas as pd
-                    df = pd.read_json(file_path, encoding=self.input_data_params.single_file_encoding)
+                    df = pd.read_json(file_path, encoding=self.input_data_params.file_encoding)
                     column_names = [str(col) for col in df.columns.tolist()]
                 except Exception as e:
                     print(f"Помилка читання JSON: {e}")
-                    self.try_different_encodings(file_path)
+                    if not self.view.single_manual_encoding_checkbox.isChecked():
+                        self.auto_detect_format(file_path, 'single')
 
             elif ext == '.parquet':
                 try:
@@ -243,46 +310,6 @@ class InputDataTabController(TabController):
                 f"Не вдалося прочитати заголовки файлу. Перевірте формат, кодування та роздільник.\nПомилка: {str(e)}"
             )
 
-    def try_different_encodings(self, file_path):
-        """Спроба автоматично визначити кодування файлу"""
-        encodings = ['utf-8', 'cp1251', 'latin-1', 'iso-8859-1', 'ascii']
-        separators = [',', ';', '\t', '|', ' ']
-
-        ext = os.path.splitext(file_path)[1].lower()
-        if ext != '.csv':
-            return False
-
-        import pandas as pd
-
-        for encoding in encodings:
-            for separator in separators:
-                try:
-                    df = pd.read_csv(file_path, nrows=1, encoding=encoding, sep=separator)
-                    if len(df.columns) > 1:  # Перевіряємо, чи було успішно розпізнано кілька стовпців
-                        # Оновлюємо значення в моделі та інтерфейсі
-                        self.input_data_params.single_file_encoding = encoding
-                        self.view.single_encoding_combo.setCurrentText(encoding)
-                        self.input_data_params.single_file_separator = self.get_separator_display(separator)
-                        self.view.single_separator_combo.setCurrentText(self.get_separator_display(separator))
-
-                        # Оновлюємо випадаючий список цільових змінних
-                        self.view.target_combo.clear()
-                        self.view.target_combo.addItems(df.columns.tolist())
-                        if df.columns.tolist():
-                            self.input_data_params.target_variable = df.columns.tolist()[0]
-
-                        QMessageBox.information(
-                            self.view,
-                            "Кодування визначено",
-                            f"Автоматично визначено кодування: {encoding}, роздільник: {self.get_separator_display(separator)}"
-                        )
-
-                        return True
-                except Exception:
-                    continue
-
-        return False
-
     def convert_separator(self, separator):
         """Конвертує відображуваний роздільник у фактичний для pandas"""
         if separator == "\\t":
@@ -300,28 +327,23 @@ class InputDataTabController(TabController):
 
         # Одинарний файл
         self.input_data_params.single_file_path = self.view.single_file_path.text()
-        self.input_data_params.single_file_encoding = self.view.single_encoding_combo.currentText()
-        self.input_data_params.single_file_separator = self.view.single_separator_combo.currentText()
+        self.input_data_params.file_encoding = self.view.single_encoding_combo.currentText()
+        self.input_data_params.file_separator = self.view.single_separator_combo.currentText()
 
-        # X_train
+        # Для режиму multiple files - використовуємо спільні налаштування
+        if self.input_data_params.mode == 'multi_files':
+            common_encoding = self.view.multi_encoding_combo.currentText()
+            common_separator = self.view.multi_separator_combo.currentText()
+
+            # Встановлюємо спільні налаштування для всіх файлів
+            self.input_data_params.file_encoding = common_encoding
+            self.input_data_params.file_separator = common_separator
+
+        # Шляхи до файлів в режимі multiple
         self.input_data_params.x_train_file_path = self.view.x_train_file_path.text()
-        self.input_data_params.x_train_file_encoding = self.view.x_train_encoding_combo.currentText()
-        self.input_data_params.x_train_file_separator = self.view.x_train_separator_combo.currentText()
-
-        # Y_train
         self.input_data_params.y_train_file_path = self.view.y_train_file_path.text()
-        self.input_data_params.y_train_file_encoding = self.view.y_train_encoding_combo.currentText()
-        self.input_data_params.y_train_file_separator = self.view.y_train_separator_combo.currentText()
-
-        # X_test
         self.input_data_params.x_test_file_path = self.view.x_test_file_path.text()
-        self.input_data_params.x_test_file_encoding = self.view.x_test_encoding_combo.currentText()
-        self.input_data_params.x_test_file_separator = self.view.x_test_separator_combo.currentText()
-
-        # Y_test
         self.input_data_params.y_test_file_path = self.view.y_test_file_path.text()
-        self.input_data_params.y_test_file_encoding = self.view.y_test_encoding_combo.currentText()
-        self.input_data_params.y_test_file_separator = self.view.y_test_separator_combo.currentText()
 
         # Параметри розбиття
         self.input_data_params.train_percent = self.view.train_percent.value()
@@ -331,6 +353,8 @@ class InputDataTabController(TabController):
         # Цільова змінна (лише якщо поле видиме і навчання з учителем)
         if not self.input_data_params.is_target_not_required() and self.view.target_combo.isVisible():
             self.input_data_params.target_variable = self.view.target_combo.currentText()
+
+        self.input_data_params.categorical_encoding = self.view.get_categorical_encoding_method()
 
     def get_input_params(self):
         self.update_model_from_view()

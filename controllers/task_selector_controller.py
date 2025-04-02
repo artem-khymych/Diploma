@@ -12,12 +12,18 @@ class TaskSelectorController(QObject):
 
     own_nn_selected = pyqtSignal()
     send_ml_model = pyqtSignal(str, object, object)
+
+    _instance = None  # Змінна класу для зберігання екземпляра
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self, sender):
         super().__init__()
         self.sender = sender
         self.selected_task: str = ""
-        #self.parameter_editor_controller = ParameterEditorController()
-        self.editor = ParameterEditorWidget()
 
     def show_approach_selection(self):
         approach_dict = {
@@ -96,7 +102,7 @@ class TaskSelectorController(QObject):
         selected_button = group.checkedButton()
         selected_task = group.checkedButton().text()
         self.selected_task = selected_task
-        #TODO handle own nn selection
+        # TODO handle own nn selection
         if selected_button:
             # Create final placeholder page
             placeholder_dialog = QDialog(self.sender)
@@ -114,7 +120,6 @@ class TaskSelectorController(QObject):
             layout.addWidget(title_label)
             dialog.accept()
             self.request_models_dict.emit(selected_task)
-
 
     def show_model_selection_dialog(self, models_dict):
         """
@@ -167,6 +172,7 @@ class TaskSelectorController(QObject):
 
         # Initialize result
         selected_model = None
+
         def on_select():
             nonlocal selected_model
             current_item = models_list.currentItem()
@@ -187,7 +193,6 @@ class TaskSelectorController(QObject):
         # Return selected model or None if canceled
         return selected_model if result == QDialog.Accepted else None
 
-
     def handle_models_dict_response(self, models_dict):
         choosen_model = (self.show_model_selection_dialog(models_dict))
 
@@ -195,6 +200,8 @@ class TaskSelectorController(QObject):
         dialog.setWindowTitle("Set model parameters")
         dialog.setGeometry(200, 200, 400, 600)
         layout = QVBoxLayout(dialog)
+
+        self.editor = ParameterEditorWidget()
         layout.addWidget(self.editor)
 
         self.editor.populate_table(choosen_model.get_params())
@@ -203,6 +210,7 @@ class TaskSelectorController(QObject):
         layout.addWidget(save_btn)
 
         params = {}
+
         def on_get_parameters():
             nonlocal params
             params = self.editor.get_current_parameters()
@@ -217,5 +225,4 @@ class TaskSelectorController(QObject):
         print(model, params)
         self.send_ml_model.emit(self.selected_task, model, params)
 
-
-#TODO maybe experiment data handler?
+# TODO maybe experiment data handler?

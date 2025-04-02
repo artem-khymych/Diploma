@@ -7,7 +7,7 @@ class GeneralTabWidget(QWidget):
     """Представлення для вкладки загальних налаштувань"""
 
     # Сигнал для запуску експерименту
-    experiment_start_signal = pyqtSignal()
+    experiment_started = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -71,17 +71,7 @@ class GeneralTabWidget(QWidget):
 
     def on_start_clicked(self):
         """Обробник натискання кнопки запуску"""
-        # Перевірка параметрів input_params_data (заглушка)
-        if self.check_input_params():
-            # Генеруємо сигнал для запуску експерименту
-            self.experiment_start_signal.emit()
-            self.status_value.setText("Запущено")
-            self.start_button.setEnabled(False)
-
-    def check_input_params(self):
-        """Заглушка для перевірки параметрів вхідних даних"""
-        # Тут буде реалізована перевірка параметрів
-        return True
+        self.experiment_started.emit()
 
     def set_experiment_finished(self, training_time):
         """Встановлення статусу завершення експерименту"""

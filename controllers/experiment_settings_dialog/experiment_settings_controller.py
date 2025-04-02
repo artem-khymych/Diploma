@@ -9,7 +9,6 @@ from project.logic.experiment.experiment import Experiment
 from project.ui.experiment_settings_dialog.experiment_settings_dialog import ExperimentSettingsDialog
 
 
-#TODO налаштувати діалогове вікно інформації про ноду(експеримент) контролери і метод для запуску, який би отримував айді ноди і експерименту
 class ExperimentSettingsController:
     """Головний контролер для діалогу налаштувань експерименту"""
     def __init__(self, experiment: Experiment, dialog: ExperimentSettingsDialog):
@@ -30,32 +29,44 @@ class ExperimentSettingsController:
 
     def connect_signals(self):
         self.dialog.ok_btn.clicked.connect(self.on_accept)
-        self.general_controller.experiment_started.connect(self.experiment.run)
+        self.general_controller.view.experiment_started.connect(self.check_settings_and_run_experiment)
+
+    def check_settings_and_run_experiment(self):
+        if self.check_settings():
+            self.experiment.run()
+        else:
+            return
 
     def on_accept(self):
         """Обробка натискання кнопки OK"""
         # Перевірка введених даних
-        if self.validate_data():
+        """if self.validate_data():
             self.update_model_from_all_views()
             self.dialog.accept()
         else:
             self.dialog.reject()
-            return
+            return"""
+        self.update_model_from_all_views()
+        self.dialog.accept()
 
 
 
-    def validate_data(self):
+    def check_settings(self):
         """Перевірка валідності всіх даних"""
         # Перевірка даних з вкладки "Дані"
         if self.input_data_controller.input_data_params.mode == 'single_file' and not self.input_data_controller.input_data_params.single_file_path:
             QMessageBox.warning(self.dialog, "Помилка", "Будь ласка, виберіть файл даних на вкладці 'Дані'.")
             self.dialog.tab_widget.setCurrentIndex(2)
             return False
-        elif self.input_data_controller.input_data_params.mode == 'two_files' and (
-                not self.input_data_controller.input_data_params.train_file_path or not self.input_data_controller.input_data_params.test_file_path):
+        elif self.input_data_controller.input_data_params.mode == 'multi_files' and (
+                not self.input_data_controller.input_data_params.x_train_file_path
+                or not self.input_data_controller.input_data_params.y_train_file_path
+                or not self.input_data_controller.input_data_params.x_test_file_path
+                or not self.input_data_controller.input_data_params.y_test_file_path
+        ):
             QMessageBox.warning(self.dialog, "Помилка",
                                 "Будь ласка, виберіть обидва файли для тренування і тестування на вкладці 'Дані'.")
-            self.dialog.tab_widget.setCurrentIndex(1)  # Перехід на вкладку "Дані"
+            self.dialog.tab_widget.setCurrentIndex(2)  # Перехід на вкладку "Дані"
             return False
 
         # Перевірка даних з вкладки "Загальні налаштування"

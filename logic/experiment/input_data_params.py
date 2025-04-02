@@ -18,19 +18,13 @@ class InputDataParams:
 
         self.target_variable = ''
 
-        self.single_file_encoding = 'utf-8'
-        self.x_train_file_encoding = 'utf-8'
-        self.y_train_file_encoding = 'utf-8'
-        self.x_test_file_encoding = 'utf-8'
-        self.y_test_file_encoding = 'utf-8'
+        self.file_encoding = 'utf-8'
 
-        self.single_file_separator = ','
-        self.x_train_file_separator = ','
-        self.y_train_file_separator = ','
-        self.x_test_file_separator = ','
-        self.y_test_file_separator = ','
+        self.file_separator = ','
 
         self.current_task = ''
+
+        self.categorical_encoding = 'one-hot'
 
     def to_dict(self):
         data = {
@@ -44,8 +38,9 @@ class InputDataParams:
                 'train_percent': self.train_percent,
                 'test_percent': self.test_percent,
                 'seed': self.seed,
-                'single_file_encoding': self.single_file_encoding,
-                'single_file_separator': self.single_file_separator
+                'file_encoding': self.file_encoding,
+                'file_separator': self.file_separator,
+                'categorical_encoding': self.categorical_encoding
             })
 
             if self.target_variable and not self.is_target_not_required():
@@ -55,10 +50,9 @@ class InputDataParams:
                 data.update({
                     'x_train_file_path': self.x_train_file_path,
                     'x_test_file_path': self.x_test_file_path,
-                    'x_train_file_encoding': self.x_train_file_encoding,
-                    'x_test_file_encoding': self.x_test_file_encoding,
-                    'x_train_file_separator': self.x_train_file_separator,
-                    'x_test_file_separator': self.x_test_file_separator
+                    'file_encoding': self.file_encoding,
+                    'file_separator': self.file_separator,
+                    'categorical_encoding': self.categorical_encoding
                 })
             else:
                 data.update({
@@ -66,14 +60,9 @@ class InputDataParams:
                     'y_train_file_path': self.y_train_file_path,
                     'x_test_file_path': self.x_test_file_path,
                     'y_test_file_path': self.y_test_file_path,
-                    'x_train_file_encoding': self.x_train_file_encoding,
-                    'y_train_file_encoding': self.y_train_file_encoding,
-                    'x_test_file_encoding': self.x_test_file_encoding,
-                    'y_test_file_encoding': self.y_test_file_encoding,
-                    'x_train_file_separator': self.x_train_file_separator,
-                    'y_train_file_separator': self.y_train_file_separator,
-                    'x_test_file_separator': self.x_test_file_separator,
-                    'y_test_file_separator': self.y_test_file_separator
+                    'file_encoding': self.file_encoding,
+                    'file_separator': self.file_separator,
+                    'categorical_encoding': self.categorical_encoding
                 })
 
         return data

@@ -1,6 +1,7 @@
 from typing import List, Set, Dict
 from collections.abc import Iterator, Callable
 
+from PyQt5.QtCore import pyqtSignal, QObject
 from pandas import DataFrame
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 
@@ -14,23 +15,35 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-class Experiment:
+
+class Experiment(QObject):
+    experiment_finished = pyqtSignal(float)
 
     def __init__(self, id, task, model, params):
+        super().__init__()
         self.id: int = id
         self.task: str = task
-        self.model: Callable[[Dict]] = model
-        self._params: Dict[str:any] = params
         self._name = f"Experiment {id}"
         self.description = ""
+
+        self.model: Callable[[Dict]] = model
+        self.trained_model = None
+        self._params: Dict[str:any] = params
         self.input_data_params = InputDataParams()
 
-        self.train_data: DataFrame
-        self.test_data: DataFrame
+        # Зберігання даних у класичному форматі
+        self.X_train = None
+        self.X_test = None
+        self.y_train = None
+        self.y_test = None
 
-        self.train_time: float
+        self.train_time: float = 0
         self.is_finished: bool = False
         self.metric_strategy: MetricStrategy
+
+        # Для зберігання результатів
+        self.predictions = None
+        self.actual = None
 
     @property
     def name(self) -> str:
@@ -83,167 +96,200 @@ class Experiment:
 
     def run(self):
         """
-        Виконує експеримент машинного навчання: завантажує дані, навчає модель,
-        обчислює метрики та зберігає результати.
+        Запускає експеримент машинного навчання з урахуванням вхідних параметрів.
+        Обробляє дані, навчає модель та оцінює результати.
         """
-        # Встановлення стратегії метрик відповідно до задачі
+        # Завантаження та підготовка даних
+        self._load_data()
+
+        # Вибір відповідної метрики для оцінки моделі
         self._choose_metric_strategy()
 
-        # Завантаження даних відповідно до параметрів
-        if self.input_data_params.mode == 'single_file':
-            # Визначення формату файлу за розширенням
-            file_path = self.input_data_params.single_file_path
-            file_extension = file_path.split('.')[-1].lower()
-
-            # Завантаження файлу відповідно до формату
-            if file_extension == 'csv':
-                data = pd.read_csv(
-                    file_path,
-                    sep=self.input_data_params.single_file_separator,
-                    encoding=self.input_data_params.single_file_encoding
-                )
-            elif file_extension in ['xlsx', 'xls']:
-                data = pd.read_excel(file_path)
-            elif file_extension == 'json':
-                data = pd.read_json(file_path)
-            elif file_extension == 'parquet':
-                data = pd.read_parquet(file_path)
-            else:
-                raise ValueError(f"Непідтримуваний формат файлу: {file_extension}")
-
-            # Розділення даних на тренувальну та тестову вибірки
-            if self.input_data_params.is_target_not_required():
-                # Для задач без цільової змінної
-                train_data, test_data = train_test_split(
-                    data,
-                    test_size=self.input_data_params.test_percent / 100,
-                    train_size=self.input_data_params.train_percent / 100,
-                    random_state=self.input_data_params.seed
-                )
-                X_train = train_data
-                y_train = None
-                X_test = test_data
-                y_test = None
-            else:
-                # Для задач з цільовою змінною
-                target = self.input_data_params.target_variable
-                if target not in data.columns:
-                    raise ValueError(f"Цільова змінна '{target}' не знайдена в даних")
-
-                X = data.drop(columns=[target])
-                y = data[target]
-
-                X_train, X_test, y_train, y_test = train_test_split(
-                    X, y,
-                    test_size=self.input_data_params.test_percent / 100,
-                    train_size=self.input_data_params.train_percent / 100,
-                    random_state=self.input_data_params.seed
-                )
-        else:
-            # Режим з окремими файлами для тренувальних та тестових даних
-            # Завантаження X_train
-            X_train = self._load_file(
-                self.input_data_params.x_train_file_path,
-                self.input_data_params.x_train_file_separator,
-                self.input_data_params.x_train_file_encoding
-            )
-
-            # Завантаження X_test
-            X_test = self._load_file(
-                self.input_data_params.x_test_file_path,
-                self.input_data_params.x_test_file_separator,
-                self.input_data_params.x_test_file_encoding
-            )
-
-            # Для задач, які потребують цільові змінні
-            if not self.input_data_params.is_target_not_required():
-                # Завантаження y_train
-                y_train = self._load_file(
-                    self.input_data_params.y_train_file_path,
-                    self.input_data_params.y_train_file_separator,
-                    self.input_data_params.y_train_file_encoding
-                )
-
-                # Перетворення DataFrame на Series, якщо потрібно
-                if isinstance(y_train, pd.DataFrame) and y_train.shape[1] == 1:
-                    y_train = y_train.iloc[:, 0]
-
-                # Завантаження y_test
-                y_test = self._load_file(
-                    self.input_data_params.y_test_file_path,
-                    self.input_data_params.y_test_file_separator,
-                    self.input_data_params.y_test_file_encoding
-                )
-
-                # Перетворення DataFrame на Series, якщо потрібно
-                if isinstance(y_test, pd.DataFrame) and y_test.shape[1] == 1:
-                    y_test = y_test.iloc[:, 0]
-            else:
-                y_train = None
-                y_test = None
-
-        # Збереження даних для подальшого використання
-        if y_train is not None:
-            self.train_data = pd.concat([X_train, pd.Series(y_train, name=self.input_data_params.target_variable)],
-                                        axis=1)
-            self.test_data = pd.concat([X_test, pd.Series(y_test, name=self.input_data_params.target_variable)], axis=1)
-        else:
-            self.train_data = X_train
-            self.test_data = X_test
-
-        # Створення та навчання моделі
-        model_instance = type(self.model)(**self._params)
-        self.model = model_instance
-        # Вимірювання часу навчання
+        # Навчання моделі та вимірювання часу
         start_time = time.time()
 
-        # Навчання моделі відповідно до типу задачі
-        if self.input_data_params.is_target_not_required():
-            # Для задач без цільової змінної (кластеризація, зниження розмірності, виявлення аномалій, оцінка густини)
-            model_instance.fit(X_train)
-            y_pred = model_instance.predict(X_test)
-        else:
-            # Для задач з цільовою змінною (класифікація, регресія, часові ряди)
-            model_instance.fit(X_train, y_train)
-            y_pred = model_instance.predict(X_test)
+        # Створення моделі з переданими параметрами
+        model_instance = type(self.model)(**self._params)
 
+        # Різна логіка навчання в залежності від типу завдання
+        if self.task in [task_names.CLASSIFICATION, task_names.REGRESSION, task_names.MLP]:
+            # Навчання моделі
+            model_instance.fit(self.X_train, self.y_train)
+
+            # Збереження результатів
+            self.predictions = model_instance.predict(self.X_test)
+            self.actual = self.y_test
+
+        elif self.task in [task_names.CLUSTERING, task_names.ANOMALY_DETECTION, task_names.DENSITY_ESTIMATION]:
+            # Для unsupervised завдань не потрібна цільова змінна
+            model_instance.fit(self.X_train)
+
+            # Отримання результатів
+            if hasattr(model_instance, 'predict'):
+                self.predictions = model_instance.predict(self.X_test)
+            elif hasattr(model_instance, 'fit_predict') and self.task == task_names.CLUSTERING:
+                # Для деяких кластеризаційних алгоритмів
+                self.predictions = model_instance.fit_predict(self.X_test)
+
+        elif self.task == task_names.DIMENSIONALITY_REDUCTION:
+            # Навчання моделі зниження розмірності
+            model_instance.fit(self.X_train)
+
+            # Трансформація даних
+            self.transformed_train = model_instance.transform(self.X_train)
+            self.transformed_test = model_instance.transform(self.X_test)
+
+        elif self.task == task_names.TIME_SERIES:
+            # Специфічна обробка для часових рядів
+            # Логіка залежить від конкретної реалізації та моделі
+            pass
+
+        # Збереження часу навчання
         self.train_time = time.time() - start_time
 
-        # Обчислення метрик відповідно до типу задачі
-        metrics = {}
-        if self.task == task_names.CLASSIFICATION:
-            metrics = self.metric_strategy.evaluate(y_test, y_pred)
-        elif self.task == task_names.REGRESSION:
-            metrics = self.metric_strategy.evaluate(y_test, y_pred)
-        elif self.task == task_names.CLUSTERING:
-            metrics = self.metric_strategy.evaluate(X_test, y_pred)
-        elif self.task == task_names.ANOMALY_DETECTION:
-            metrics = self.metric_strategy.evaluate(X_test, y_pred)
-        elif self.task == task_names.DENSITY_ESTIMATION:
-            metrics = self.metric_strategy.evaluate(X_test, y_pred)
-        elif self.task == task_names.DIMENSIONALITY_REDUCTION:
-            # Для зниження розмірності часто порівнюють якість реконструкції або збереження дисперсії
-            metrics = self.metric_strategy.evaluate(X_test, model_instance.transform(X_test))
-        elif self.task == task_names.TIME_SERIES:
-            metrics = self.metric_strategy.evaluate(y_test, y_pred)
-
-        # Записати результати
-        self.metrics = metrics
+        # Зберігаємо навчену модель
         self.trained_model = model_instance
+
+        # Позначаємо експеримент як завершений
         self.is_finished = True
 
-        return metrics
+        # Повертаємо результати метрик
+        print(self._calculate_metrics())
+        self.experiment_finished.emit(self.train_time)
+        return
 
-    def _load_file(self, file_path, separator, encoding):
+    def _load_data(self):
         """
-        Допоміжний метод для завантаження файлів різних форматів
+        Завантажує дані в залежності від параметрів вхідних даних.
+        Обробляє категоріальні змінні та розділяє дані на X_train, X_test, y_train, y_test.
         """
-        import pandas as pd
+        params = self.input_data_params
 
+        if params.mode == 'single_file':
+            # Завантаження з одного файлу
+            data = self._load_file(params.single_file_path)
+
+            # Обробка даних перед розділенням
+            if not params.is_target_not_required():
+                # Для supervised learning
+                X = data.drop(params.target_variable, axis=1)
+                y = data[params.target_variable]
+
+                # Розділення на навчальну та тестову вибірки
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y,
+                    test_size=params.test_percent / 100,
+                    random_state=params.seed,
+                    stratify=y if self.task == task_names.CLASSIFICATION else None
+                )
+
+                # Обробка категоріальних змінних для X_train та X_test
+                X_combined = pd.concat([X_train, X_test])
+                X_combined_encoded = self._encode_categorical_variables(X_combined)
+
+                # Розділення назад після обробки
+                self.X_train = X_combined_encoded.iloc[:len(X_train)]
+                self.X_test = X_combined_encoded.iloc[len(X_train):]
+
+                # Обробка y, якщо це категоріальна змінна і задача класифікації
+                if self.task == task_names.CLASSIFICATION and y.dtype == 'object':
+                    y_combined = pd.concat([y_train, y_test])
+                    y_combined_encoded = self._encode_categorical_variables(pd.DataFrame(y_combined))
+
+                    self.y_train = y_combined_encoded.iloc[:len(y_train)].values.ravel()
+                    self.y_test = y_combined_encoded.iloc[len(y_train):].values.ravel()
+                else:
+                    self.y_train = y_train
+                    self.y_test = y_test
+
+            else:
+                # Для unsupervised learning
+                # Розділення на навчальну та тестову вибірки
+                X_train, X_test = train_test_split(
+                    data,
+                    test_size=params.test_percent / 100,
+                    random_state=params.seed
+                )
+
+                # Обробка категоріальних змінних для X_train та X_test
+                X_combined = pd.concat([X_train, X_test])
+                X_combined_encoded = self._encode_categorical_variables(X_combined)
+
+                # Розділення назад після обробки
+                self.X_train = X_combined_encoded.iloc[:len(X_train)]
+                self.X_test = X_combined_encoded.iloc[len(X_train):]
+
+                # Для unsupervised навчання y не потрібен
+                self.y_train = None
+                self.y_test = None
+        else:
+            # Завантаження з окремих файлів
+            X_train = self._load_file(params.x_train_file_path)
+            X_test = self._load_file(params.x_test_file_path)
+
+            # Обробка категоріальних змінних (спільна обробка для узгодженості кодування)
+            X_combined = pd.concat([X_train, X_test])
+            X_combined_encoded = self._encode_categorical_variables(X_combined)
+
+            # Розділення назад після обробки
+            self.X_train = X_combined_encoded.iloc[:len(X_train)]
+            self.X_test = X_combined_encoded.iloc[len(X_train):]
+
+            if not params.is_target_not_required():
+                # Для supervised learning
+                y_train = self._load_file(params.y_train_file_path)
+                y_test = self._load_file(params.y_test_file_path)
+
+                # Перевірка, чи це DataFrame і обробка відповідно
+                if isinstance(y_train, pd.DataFrame):
+                    if len(y_train.columns) == 1:
+                        y_train = y_train.iloc[:, 0]
+                    else:
+                        # Якщо кілька колонок, обробляємо першу
+                        y_train = y_train.iloc[:, 0]
+
+                if isinstance(y_test, pd.DataFrame):
+                    if len(y_test.columns) == 1:
+                        y_test = y_test.iloc[:, 0]
+                    else:
+                        # Якщо кілька колонок, обробляємо першу
+                        y_test = y_test.iloc[:, 0]
+
+                # Обробка категоріальних змінних для y, якщо необхідно
+                if self.task == task_names.CLASSIFICATION and pd.api.types.is_object_dtype(y_train):
+                    y_combined = pd.concat([y_train, y_test])
+                    y_combined = pd.DataFrame(y_combined, columns=['target'])
+                    y_combined_encoded = self._encode_categorical_variables(y_combined)
+
+                    self.y_train = y_combined_encoded.iloc[:len(y_train)].values.ravel()
+                    self.y_test = y_combined_encoded.iloc[len(y_train):].values.ravel()
+                else:
+                    self.y_train = y_train
+                    self.y_test = y_test
+            else:
+                # Для unsupervised learning
+                self.y_train = None
+                self.y_test = None
+
+    def _load_file(self, file_path):
+        """
+        Завантажує дані з файлу різних форматів.
+        Підтримуються формати: CSV, Excel, JSON, Parquet.
+
+        Args:
+            file_path (str): Шлях до файлу з даними
+
+        Returns:
+            DataFrame: Завантажені дані у вигляді pandas DataFrame
+        """
         file_extension = file_path.split('.')[-1].lower()
 
         if file_extension == 'csv':
-            return pd.read_csv(file_path, sep=separator, encoding=encoding)
+            return pd.read_csv(
+                file_path,
+                encoding=self.input_data_params.file_encoding,
+                sep=self.input_data_params.file_separator
+            )
         elif file_extension in ['xlsx', 'xls']:
             return pd.read_excel(file_path)
         elif file_extension == 'json':
@@ -252,3 +298,82 @@ class Experiment:
             return pd.read_parquet(file_path)
         else:
             raise ValueError(f"Непідтримуваний формат файлу: {file_extension}")
+
+    def _encode_categorical_variables(self, data):
+        """
+        Обробляє категоріальні змінні у DataFrame згідно з обраним методом кодування.
+
+        Args:
+            data (DataFrame): Дані для обробки
+
+        Returns:
+            DataFrame: Дані з обробленими категоріальними змінними
+        """
+        categorical_columns = data.select_dtypes(include=['object', 'category']).columns
+
+        if len(categorical_columns) == 0:
+            return data
+
+        result_data = data.copy()
+
+        # Вибір методу кодування категоріальних змінних
+        encoding_method = self.input_data_params.categorical_encoding
+
+        if encoding_method == 'one-hot':
+            # One-hot кодування (всі категорії окремими стовпцями)
+            for column in categorical_columns:
+                # Створення one-hot кодування
+                one_hot = pd.get_dummies(
+                    result_data[column],
+                    prefix=column,
+                    drop_first=False
+                )
+
+                # Видалення оригінального стовпця і додавання закодованих стовпців
+                result_data = pd.concat([result_data.drop(column, axis=1), one_hot], axis=1)
+
+        elif encoding_method == 'to_categorical':
+            from sklearn.preprocessing import LabelEncoder
+
+            for column in categorical_columns:
+                # Створюємо енкодер і навчаємо його на даних
+                label_encoder = LabelEncoder()
+                result_data[column] = label_encoder.fit_transform(result_data[column])
+
+        return result_data
+
+    def _calculate_metrics(self):
+        """
+        Обчислює метрики продуктивності моделі.
+
+        Returns:
+            dict: Словник з обчисленими метриками
+        """
+        if not self.is_finished:
+            raise BlockingIOError("The experiment isnt finished")
+
+        if self.task in [task_names.CLASSIFICATION, task_names.REGRESSION, task_names.MLP]:
+            # Використання відповідної стратегії метрик
+            return self.metric_strategy.evaluate(self.actual, self.predictions)
+
+        elif self.task == task_names.CLUSTERING:
+            # Для кластеризації можуть використовуватись внутрішні метрики
+            return self.metric_strategy.evaluate(self.X_test, self.predictions)
+
+        elif self.task == task_names.DIMENSIONALITY_REDUCTION:
+            # Для зниження розмірності
+            return self.metric_strategy.evaluate(self.X_test, self.transformed_test)
+
+        elif self.task == task_names.ANOMALY_DETECTION:
+            # Для виявлення аномалій
+            return self.metric_strategy.evaluate(self.X_test, self.predictions)
+
+        elif self.task == task_names.DENSITY_ESTIMATION:
+            # Для оцінки щільності
+            return self.metric_strategy.evaluate(self.X_test, self.predictions)
+
+        elif self.task == task_names.TIME_SERIES:
+            # Для часових рядів
+            return self.metric_strategy.evaluate(self.actual, self.predictions)
+
+        return {"error": "Невідомий тип завдання"}

@@ -33,7 +33,7 @@ class ExperimentSettingsDialog(QDialog):
         self.evaluation_tab = MetricsTabWidget()
 
         # Додаємо вкладки до віджета
-        self.tab_widget.addTab(self.general_tab, "Description")
+        self.tab_widget.addTab(self.general_tab, "General")
         self.tab_widget.addTab(self.model_tab, "Params")
         self.tab_widget.addTab(self.data_tab, "Data")
         self.tab_widget.addTab(self.evaluation_tab, "Metrics")
