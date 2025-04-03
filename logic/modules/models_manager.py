@@ -23,7 +23,8 @@ import sklearn.discriminant_analysis as discriminant_analysis
 import sklearn.cross_decomposition as cross_decomposition
 import sklearn.gaussian_process as gaussian_process
 from PyQt5.QtCore import pyqtSignal, QObject
-from sklearn.base import is_regressor, is_classifier
+from sklearn.base import is_regressor, is_classifier, is_outlier_detector, DensityMixin
+from sklearn.utils import all_estimators
 
 from project.logic.modules import task_names
 
@@ -47,7 +48,8 @@ Neural Networks:
 """
 import sklearn.neural_network as neural_network
 
-#TODO add statsmodels and more checks on models before sending dict
+
+# TODO add statsmodels and more checks on models before sending dict
 class ModelsManager(QObject):
     classification_modules = [
         linear_model, svm, tree, ensemble, neighbors,
@@ -63,14 +65,14 @@ class ModelsManager(QObject):
 
     dimension_reduction_modules = [decomposition, manifold]
 
-    anomaly_detection_modules = [covariance, ensemble, neighbors]
-    density_estimation_modules = [gaussian_process, mixture]
-
+    anomaly_detection_modules = []
+    #density_estimation_modules = [gaussian_process, mixture]
+    density_estimation_modules = []
     neural_networks_modules = [neural_network]
 
-    modules = {"Classification": classification_modules, "Regression": regression_modules,
-               "Clustering": clustering_modules, "Dimensionality Reduction": dimension_reduction_modules,
-               "Anomaly Detection": anomaly_detection_modules, "Density estimation": density_estimation_modules,
+    modules = {task_names.CLASSIFICATION: classification_modules, task_names.REGRESSION: regression_modules,
+               task_names.CLUSTERING: clustering_modules, task_names.DIMENSIONALITY_REDUCTION: dimension_reduction_modules,
+               task_names.ANOMALY_DETECTION: anomaly_detection_modules, task_names.DENSITY_ESTIMATION: density_estimation_modules,
                "Scikit-learn MLP models": neural_networks_modules}
 
     models_dict_ready = pyqtSignal(dict)
@@ -82,7 +84,7 @@ class ModelsManager(QObject):
             for name, cls in inspect.getmembers(module, inspect.isclass):
                 # Check if the class has both .fit and .predict methods
                 if ((callable(getattr(cls, 'fit', None)) and callable(getattr(cls, 'predict', None)))
-                        or callable(getattr(cls, 'transform', None)))\
+                    or callable(getattr(cls, 'transform', None))) \
                         or callable(getattr(cls, 'fit_transform', None)):
 
                     if not task == 'Classification' and not task == 'Regression':
@@ -93,6 +95,11 @@ class ModelsManager(QObject):
                     if task == task_names.CLASSIFICATION and is_classifier(cls):
                         model_dict[name] = cls
 
+        if task == task_names.ANOMALY_DETECTION:
+            model_dict = self._get_anomaly_detection_models()
+        if task == task_names.DENSITY_ESTIMATION:
+            model_dict = self._get_density_estimation_models()
+
         self.models_dict_ready.emit(model_dict)
 
     def get_model_by_name(self, name, model_dict):
@@ -100,6 +107,30 @@ class ModelsManager(QObject):
             return model_dict[name]()
         else:
             raise ValueError(f"Model '{name}' not available in model_dict.")
+
+    def _get_anomaly_detection_models(self):
+        estimators = all_estimators()
+        anomaly_methods = {}
+        for name, Estimator in estimators:
+            try:
+                if hasattr(Estimator, "predict") and hasattr(Estimator, "fit"):
+                    if is_outlier_detector(Estimator):
+                        anomaly_methods[name] = Estimator
+            except:
+                pass
+        return anomaly_methods
+
+    def _get_density_estimation_models(self):
+        estimators = all_estimators()
+        density_methods = {}
+        for name, Estimator in estimators:
+            try:
+                if hasattr(Estimator, "predict") and hasattr(Estimator, "fit"):
+                    if issubclass(Estimator, DensityMixin) and name != "DensityMixin":
+                        density_methods[name] = Estimator
+            except:
+                pass
+        return density_methods
 
     def get_model_params(self, model):
         model.get_params()

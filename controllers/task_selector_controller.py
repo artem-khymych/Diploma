@@ -2,6 +2,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, QObject
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QPushButton, QLabel, QVBoxLayout, QDialog, QRadioButton, QButtonGroup, QListWidget
 
+from project.logic.modules import task_names
 from project.ui.task_selector.dynamic_button_dialog import DynamicButtonDialog
 from project.ui.parameter_editor_widget import ParameterEditorWidget
 from project.controllers.parameter_editor_controller import ParameterEditorController
@@ -53,17 +54,17 @@ class TaskSelectorController(QObject):
 
     def show_supervised_task_selection(self):
         tasks = {
-            "Classification": 1,
-            "Regression": 2
+            task_names.CLASSIFICATION: 1,
+            task_names.REGRESSION: 2
         }
         self.show_task_selection_dialog("Select Supervised Learning Task", tasks)
 
     def show_unsupervised_task_selection(self):
         tasks = {
-            "Clustering": 1,
-            "Dimensionality Reduction": 2,
-            "Anomaly Detection": 3,
-            "Density estimation": 4
+            task_names.CLUSTERING: 1,
+            task_names.DIMENSIONALITY_REDUCTION: 2,
+            task_names.ANOMALY_DETECTION: 3,
+            task_names.DENSITY_ESTIMATION: 4
         }
         self.show_task_selection_dialog("Select Unsupervised Learning Task", tasks)
 
