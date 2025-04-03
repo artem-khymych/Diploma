@@ -29,7 +29,9 @@ class ExperimentSettingsController:
 
     def connect_signals(self):
         self.dialog.ok_btn.clicked.connect(self.on_accept)
+        self.dialog.cancel_btn.clicked.connect(self.on_cancel)
         self.general_controller.view.experiment_started.connect(self.check_settings_and_run_experiment)
+        self.experiment.experiment_finished.connect(self.metrics_controller.on_metrics_updated)
 
     def check_settings_and_run_experiment(self):
         if self.check_settings():
@@ -37,19 +39,12 @@ class ExperimentSettingsController:
         else:
             return
 
+    def on_cancel(self):
+        self.dialog.reject()
+
     def on_accept(self):
-        """Обробка натискання кнопки OK"""
-        # Перевірка введених даних
-        """if self.validate_data():
-            self.update_model_from_all_views()
-            self.dialog.accept()
-        else:
-            self.dialog.reject()
-            return"""
         self.update_model_from_all_views()
         self.dialog.accept()
-
-
 
     def check_settings(self):
         """Перевірка валідності всіх даних"""
@@ -87,10 +82,11 @@ class ExperimentSettingsController:
 
         #self.metrics_controller.update_model_from_view()
 
-
     def show(self):
         while True:
             if self.dialog.exec_() == QDialog.Accepted:
                 return self.input_data_controller.get_input_params()
+            elif self.dialog.exec_() == QDialog.Rejected:
+                return
 
 

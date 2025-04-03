@@ -32,6 +32,8 @@ class GeneralSettingsController(QObject):
         """Оновлення моделі даними з представлення"""
         self.experiment.name = self.view.experiment_name.text()
         self.experiment.description = self.view.description.toPlainText()
+        if self.experiment.is_finished:
+            self.view.start_button.setText("Перезапустити")
 
     def set_experiment_name(self, name: str):
         self.view.experiment_name.setText(name)

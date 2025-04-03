@@ -13,7 +13,6 @@ from project.ui.inspector_window import InspectorWindow
 
 # from project.logic.calculations import calculate_sum
 
-# ІМпорти логіки і юай одночасно
 class MainController:
     def __init__(self):
         self.view = MainWindow()

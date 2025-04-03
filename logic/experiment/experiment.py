@@ -5,9 +5,13 @@ from PyQt5.QtCore import pyqtSignal, QObject
 from pandas import DataFrame
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 
-from project.logic.evaluation.metric_strategy import (MetricStrategy, ClassificationMetric, RegressionMetric,
-                                                      ClusteringMetric, AnomalyDetectionMetric, DensityEstimationMetric,
-                                                      DimReduction, TimeSeriesMetric)
+from project.logic.evaluation.anomaly_detection_metric import AnomalyDetectionMetric
+from project.logic.evaluation.classification_metric import ClassificationMetric
+from project.logic.evaluation.clustering_metric import ClusteringMetric
+from project.logic.evaluation.density_estimation_metric import DensityEstimationMetric
+from project.logic.evaluation.dim_reduction_metric import DimReduction
+from project.logic.evaluation.metric_strategy import MetricStrategy, TimeSeriesMetric
+from project.logic.evaluation.regression_metric import RegressionMetric
 from project.logic.experiment.input_data_params import InputDataParams
 from project.logic.modules import task_names
 import time
@@ -17,7 +21,7 @@ from sklearn.model_selection import train_test_split
 
 
 class Experiment(QObject):
-    experiment_finished = pyqtSignal(float)
+    experiment_finished = pyqtSignal(float, object, object)
 
     def __init__(self, id, task, model, params):
         super().__init__()
@@ -42,8 +46,14 @@ class Experiment(QObject):
         self.metric_strategy: MetricStrategy
 
         # Для зберігання результатів
-        self.predictions = None
-        self.actual = None
+        self.train_predictions = None
+        self.test_predictions = None
+        self.train_actual = None
+        self.test_actual = None
+
+        # Для зберігання результатів трансформацій
+        self.transformed_train = None
+        self.transformed_test = None
 
     @property
     def name(self) -> str:
@@ -97,7 +107,7 @@ class Experiment(QObject):
     def run(self):
         """
         Запускає експеримент машинного навчання з урахуванням вхідних параметрів.
-        Обробляє дані, навчає модель та оцінює результати.
+        Обробляє дані, навчає модель та оцінює результати на тренувальному та тестовому наборах.
         """
         # Завантаження та підготовка даних
         self._load_data()
@@ -116,28 +126,36 @@ class Experiment(QObject):
             # Навчання моделі
             model_instance.fit(self.X_train, self.y_train)
 
-            # Збереження результатів
-            self.predictions = model_instance.predict(self.X_test)
-            self.actual = self.y_test
+            # Збереження результатів (як для тренувального, так і для тестового наборів)
+            self.train_predictions = model_instance.predict(self.X_train)
+            self.test_predictions = model_instance.predict(self.X_test)
+            self.train_actual = self.y_train
+            self.test_actual = self.y_test
 
         elif self.task in [task_names.CLUSTERING, task_names.ANOMALY_DETECTION, task_names.DENSITY_ESTIMATION]:
             # Для unsupervised завдань не потрібна цільова змінна
             model_instance.fit(self.X_train)
 
-            # Отримання результатів
+            # Отримання результатів для обох наборів
             if hasattr(model_instance, 'predict'):
-                self.predictions = model_instance.predict(self.X_test)
+                self.train_predictions = model_instance.predict(self.X_train)
+                self.test_predictions = model_instance.predict(self.X_test)
             elif hasattr(model_instance, 'fit_predict') and self.task == task_names.CLUSTERING:
                 # Для деяких кластеризаційних алгоритмів
-                self.predictions = model_instance.fit_predict(self.X_test)
+                # Для тренувального набору використовуємо результати з fit
+                self.train_predictions = model_instance.labels_ if hasattr(model_instance,
+                                                                           'labels_') else model_instance.fit_predict(
+                    self.X_train)
+                # Для тестового набору
+                self.test_predictions = model_instance.fit_predict(self.X_test)
 
         elif self.task == task_names.DIMENSIONALITY_REDUCTION:
             # Навчання моделі зниження розмірності
-            model_instance.fit(self.X_train)
+            #model_instance.fit(self.X_train, y=None)
 
-            # Трансформація даних
-            self.transformed_train = model_instance.transform(self.X_train)
-            self.transformed_test = model_instance.transform(self.X_test)
+            # Трансформація даних для обох наборів
+            self.transformed_train = model_instance.fit_transform(self.X_train, y=None)
+            self.transformed_test = model_instance.fit_transform(self.X_test, y=None)
 
         elif self.task == task_names.TIME_SERIES:
             # Специфічна обробка для часових рядів
@@ -153,9 +171,13 @@ class Experiment(QObject):
         # Позначаємо експеримент як завершений
         self.is_finished = True
 
-        # Повертаємо результати метрик
-        print(self._calculate_metrics())
-        self.experiment_finished.emit(self.train_time)
+        # Обчислення та виведення результатів метрик для обох наборів
+        train_metrics, test_metrics = self._calculate_metrics()
+        print("Train metrics:", train_metrics)
+        print("Test metrics:", test_metrics)
+
+        # Відправляємо сигнал з результатами експерименту
+        self.experiment_finished.emit(self.train_time, train_metrics, test_metrics)
         return
 
     def _load_data(self):
@@ -344,36 +366,54 @@ class Experiment(QObject):
 
     def _calculate_metrics(self):
         """
-        Обчислює метрики продуктивності моделі.
+        Обчислює метрики продуктивності моделі для тренувального та тестового наборів.
 
         Returns:
-            dict: Словник з обчисленими метриками
+            tuple: (train_metrics, test_metrics) - кортеж зі словниками метрик для кожного набору
         """
         if not self.is_finished:
-            raise BlockingIOError("The experiment isnt finished")
+            raise BlockingIOError("The experiment isn't finished")
+
+        train_metrics = {}
+        test_metrics = {}
 
         if self.task in [task_names.CLASSIFICATION, task_names.REGRESSION, task_names.MLP]:
-            # Використання відповідної стратегії метрик
-            return self.metric_strategy.evaluate(self.actual, self.predictions)
+            # Метрики для тренувального набору
+            train_metrics = self.metric_strategy.evaluate(self.train_actual, self.train_predictions)
+            # Метрики для тестового набору
+            test_metrics = self.metric_strategy.evaluate(self.test_actual, self.test_predictions)
 
         elif self.task == task_names.CLUSTERING:
             # Для кластеризації можуть використовуватись внутрішні метрики
-            return self.metric_strategy.evaluate(self.X_test, self.predictions)
+            train_metrics = self.metric_strategy.evaluate(self.X_train, self.train_predictions)
+            test_metrics = self.metric_strategy.evaluate(self.X_test, self.test_predictions)
 
         elif self.task == task_names.DIMENSIONALITY_REDUCTION:
             # Для зниження розмірності
-            return self.metric_strategy.evaluate(self.X_test, self.transformed_test)
+            train_metrics = self.metric_strategy.evaluate(self.X_train, self.transformed_train)
+            test_metrics = self.metric_strategy.evaluate(self.X_test, self.transformed_test)
 
         elif self.task == task_names.ANOMALY_DETECTION:
             # Для виявлення аномалій
-            return self.metric_strategy.evaluate(self.X_test, self.predictions)
+            train_metrics = self.metric_strategy.evaluate(self.y_train, self.train_predictions)
+            test_metrics = self.metric_strategy.evaluate(self.y_test, self.test_predictions)
 
         elif self.task == task_names.DENSITY_ESTIMATION:
             # Для оцінки щільності
-            return self.metric_strategy.evaluate(self.X_test, self.predictions)
+            train_metrics = self.metric_strategy.evaluate(self.X_train, self.train_predictions)
+            test_metrics = self.metric_strategy.evaluate(self.X_test, self.test_predictions)
 
         elif self.task == task_names.TIME_SERIES:
-            # Для часових рядів
-            return self.metric_strategy.evaluate(self.actual, self.predictions)
+            # Для часових рядів (якщо можливо поділити на тренувальний та тестовий)
+            if self.train_actual is not None and self.train_predictions is not None:
+                train_metrics = self.metric_strategy.evaluate(self.train_actual, self.train_predictions)
+            if self.test_actual is not None and self.test_predictions is not None:
+                test_metrics = self.metric_strategy.evaluate(self.test_actual, self.test_predictions)
 
-        return {"error": "Невідомий тип завдання"}
+        # Якщо метрики порожні, додамо повідомлення про помилку
+        if not train_metrics:
+            train_metrics = {"error": "Неможливо обчислити метрики для тренувального набору"}
+        if not test_metrics:
+            test_metrics = {"error": "Неможливо обчислити метрики для тестового набору"}
+
+        return train_metrics, test_metrics

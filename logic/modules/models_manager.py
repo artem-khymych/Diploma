@@ -25,6 +25,8 @@ import sklearn.gaussian_process as gaussian_process
 from PyQt5.QtCore import pyqtSignal, QObject
 from sklearn.base import is_regressor, is_classifier
 
+from project.logic.modules import task_names
+
 """
 Unsupervised Learning (Clustering, Dimensionality Reduction):
     sklearn.cluster
@@ -59,10 +61,9 @@ class ModelsManager(QObject):
 
     clustering_modules = [cluster, mixture]
 
-    dimension_reduction_modules = [decomposition, manifold, cross_decomposition]
+    dimension_reduction_modules = [decomposition, manifold]
 
     anomaly_detection_modules = [covariance, ensemble, neighbors]
-
     density_estimation_modules = [gaussian_process, mixture]
 
     neural_networks_modules = [neural_network]
@@ -80,12 +81,16 @@ class ModelsManager(QObject):
         for module in self.modules[task]:
             for name, cls in inspect.getmembers(module, inspect.isclass):
                 # Check if the class has both .fit and .predict methods
-                if callable(getattr(cls, 'fit', None)) and callable(getattr(cls, 'predict', None)):
+                if ((callable(getattr(cls, 'fit', None)) and callable(getattr(cls, 'predict', None)))
+                        or callable(getattr(cls, 'transform', None)))\
+                        or callable(getattr(cls, 'fit_transform', None)):
+
                     if not task == 'Classification' and not task == 'Regression':
                         model_dict[name] = cls
-                    if task == 'Regression' and is_regressor(cls):
+
+                    if task == task_names.REGRESSION and is_regressor(cls):
                         model_dict[name] = cls
-                    if task == 'Classification' and is_classifier(cls):
+                    if task == task_names.CLASSIFICATION and is_classifier(cls):
                         model_dict[name] = cls
 
         self.models_dict_ready.emit(model_dict)
