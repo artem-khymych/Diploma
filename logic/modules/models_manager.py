@@ -131,9 +131,9 @@ class ModelsManager(QObject):
         density_methods = {}
         for name, Estimator in estimators:
             try:
-                if (hasattr(Estimator, "predict") and hasattr(Estimator, "fit")) or (hasattr(Estimator, "fit_predict")) :
-                    if issubclass(Estimator, DensityMixin) and name != "DensityMixin":
-                        density_methods[name] = Estimator
+                #if (hasattr(Estimator, "predict") and hasattr(Estimator, "fit")) or (hasattr(Estimator, "fit_predict")) :
+                if issubclass(Estimator, DensityMixin) and name != "DensityMixin":
+                    density_methods[name] = Estimator
             except:
                 pass
         return density_methods

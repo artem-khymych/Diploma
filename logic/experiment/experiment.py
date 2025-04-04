@@ -151,7 +151,6 @@ class Experiment(QObject):
 
         elif self.task == task_names.DIMENSIONALITY_REDUCTION:
             # Навчання моделі зниження розмірності
-            #model_instance.fit(self.X_train, y=None)
 
             # Трансформація даних для обох наборів
             self.transformed_train = model_instance.fit_transform(self.X_train, y=None)
@@ -395,13 +394,13 @@ class Experiment(QObject):
 
         elif self.task == task_names.ANOMALY_DETECTION:
             # Для виявлення аномалій
-            train_metrics = self.metric_strategy.evaluate(self.y_train, self.train_predictions)
-            test_metrics = self.metric_strategy.evaluate(self.y_test, self.test_predictions)
+            train_metrics = self.metric_strategy.evaluate(self.X_train, self.train_predictions)
+            test_metrics = self.metric_strategy.evaluate(self.X_test, self.test_predictions)
 
         elif self.task == task_names.DENSITY_ESTIMATION:
             # Для оцінки щільності
-            train_metrics = self.metric_strategy.evaluate(self.X_train, self.train_predictions)
-            test_metrics = self.metric_strategy.evaluate(self.X_test, self.test_predictions)
+            train_metrics = self.metric_strategy.evaluate(self.X_train, self.trained_model)
+            test_metrics = self.metric_strategy.evaluate(self.X_test, self.trained_model)
 
         elif self.task == task_names.TIME_SERIES:
             # Для часових рядів (якщо можливо поділити на тренувальний та тестовий)

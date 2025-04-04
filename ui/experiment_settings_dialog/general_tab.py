@@ -8,6 +8,7 @@ class GeneralTabWidget(QWidget):
 
     # Сигнал для запуску експерименту
     experiment_started = pyqtSignal()
+    evaluate_clicked = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -58,6 +59,11 @@ class GeneralTabWidget(QWidget):
         # Кнопка для запуску експерименту
         self.button_layout = QHBoxLayout()
         self.start_button = QPushButton("Розпочати")
+        #self.evaluate_button = QPushButton("Оцінити")
+
+        #self.evaluate_button.setEnabled(False)
+        #self.button_layout.addWidget(self.evaluate_button)
+
         # Додаємо зелений трикутник як піктограму
         self.start_button.setIcon(QIcon.fromTheme("media-playback-start"))  # Стандартна іконка відтворення
         self.start_button.clicked.connect(self.on_start_clicked)
@@ -71,7 +77,12 @@ class GeneralTabWidget(QWidget):
 
     def on_start_clicked(self):
         """Обробник натискання кнопки запуску"""
+        #self.evaluate_button.setEnabled(True)
         self.experiment_started.emit()
+
+    def on_evaluate_clicked(self):
+        pass
+
 
     def set_experiment_finished(self, training_time):
         """Встановлення статусу завершення експерименту"""

@@ -10,152 +10,213 @@ from scipy.stats import spearmanr, pearsonr
 
 from project.logic.evaluation.metric_strategy import MetricStrategy
 
+import numpy as np
+import pandas as pd
+from sklearn.metrics import (
+    roc_auc_score, average_precision_score, precision_recall_curve,
+    precision_score, recall_score, f1_score, confusion_matrix
+)
+from scipy.stats import spearmanr, kendalltau
+from sklearn.neighbors import NearestNeighbors
+from project.logic.evaluation.metric_strategy import MetricStrategy
 
+#TODO test properly
 class AnomalyDetectionMetric(MetricStrategy):
-    def evaluate(self, y_true, anomaly_scores, threshold=None, plot_curves=False, beta=1.0):
+    def evaluate(self, X, anomaly_scores, y_true=None, contamination=0.1):
         """
-        Обчислює різні метрики для задачі виявлення аномалій.
+        Evaluates anomaly detection experiments using different metrics.
 
-        Параметри:
+        Parameters:
         -----------
-        y_true : array-like
-            Справжні мітки (1 для аномалій, 0 для нормальних спостережень).
+        X : array-like
+            Input data used for detection.
         anomaly_scores : array-like
-            Оцінки аномальності, обчислені алгоритмом (вищі значення означають
-            більшу ймовірність аномалії).
-        threshold : float, optional
-            Поріг для перетворення оцінок аномальності в бінарні мітки.
-            Якщо None, використовується поріг, що максимізує F1-score.
-        plot_curves : bool, optional, default=False
-            Якщо True, генерує графіки ROC і PR кривих.
-        beta : float, optional, default=1.0
-            Параметр для F-beta score. За замовчуванням = 1.0 (F1-score).
+            Anomaly scores or decision values returned by the detector.
+            Higher values should indicate higher likelihood of being an anomaly.
+        y_true : array-like, optional
+            True labels if available (1 for anomalies, 0 for normal).
+            If provided, supervised metrics will be calculated.
+        contamination : float, default=0.1
+            Expected proportion of anomalies in the dataset.
+            Used to determine threshold when y_true is not available.
 
-        Повертає:
+        Returns:
         -----------
         dict
-            Словник з обчисленими метриками.
+            Dictionary with evaluated metrics.
         """
-        # Перевірка вхідних даних
-        y_true = np.array(y_true)
-        anomaly_scores = np.array(anomaly_scores)
-
-        # Переконаємося, що дані у правильному форматі (1 для аномалій, 0 для нормальних)
-        if not np.array_equal(np.unique(y_true), np.array([0, 1])) and not np.array_equal(np.unique(y_true),
-                                                                                          np.array([1, 0])):
-            return {"error": "y_true має містити лише 0 (нормальні) та 1 (аномалії)"}
-
         metrics = {}
 
-        # 1. Метрики, що не залежать від порогу
-        try:
-            # ROC AUC - Площа під ROC-кривою
-            metrics['roc_auc'] = roc_auc_score(y_true, anomaly_scores)
+        # Convert scores to a consistent format (higher = more anomalous)
+        # Some algorithms like LOF return negative scores for outliers
+        if np.mean(anomaly_scores[anomaly_scores < 0]) < np.mean(anomaly_scores[anomaly_scores > 0]):
+            anomaly_scores = -anomaly_scores
 
-            # PR AUC - Площа під кривою Precision-Recall
-            metrics['pr_auc'] = average_precision_score(y_true, anomaly_scores)
+        # Threshold-based evaluation using the contamination rate if no ground truth
+        if y_true is None:
+            threshold = np.percentile(anomaly_scores, 100 * (1 - contamination))
+            y_pred = (anomaly_scores > threshold).astype(int)
 
-            # Середній ранг аномалій
-            rank_data = pd.DataFrame({
-                'true': y_true,
-                'score': anomaly_scores,
-                'rank': pd.Series(anomaly_scores).rank(ascending=False)
-            })
-            anomaly_ranks = rank_data[rank_data['true'] == 1]['rank'].values
-            metrics['average_rank_of_anomalies'] = np.mean(anomaly_ranks)
-            metrics['median_rank_of_anomalies'] = np.median(anomaly_ranks)
+            # Unsupervised metrics
+            metrics['num_detected_anomalies'] = np.sum(y_pred)
+            metrics['detection_rate'] = np.sum(y_pred) / len(y_pred)
 
-            # Коефіцієнти кореляції
-            spearman_corr, _ = spearmanr(y_true, anomaly_scores)
-            pearson_corr, _ = pearsonr(y_true, anomaly_scores)
-            metrics['spearman_correlation'] = spearman_corr
-            metrics['pearson_correlation'] = pearson_corr
-        except Exception as e:
-            metrics['error_threshold_independent'] = str(e)
+            # Add density-based metrics
+            density_metrics = self._density_based_metrics(X, anomaly_scores, y_pred)
+            metrics.update(density_metrics)
 
-        # 2. Визначення оптимального порогу, якщо не вказано
-        if threshold is None:
-            precision, recall, thresholds = precision_recall_curve(y_true, anomaly_scores)
-            # Обчислення F1 score для кожного порогу
-            f1_scores = 2 * (precision * recall) / (precision + recall + 1e-10)
-            # Визначення оптимального порогу (максимізація F1)
-            optimal_idx = np.argmax(f1_scores)
-            threshold = thresholds[optimal_idx] if optimal_idx < len(thresholds) else 0.5
-
-        metrics['threshold'] = threshold
-        y_pred = (anomaly_scores >= threshold).astype(int)
-
-        # 3. Метрики на основі порогу
-        try:
-            # Confusion Matrix (Матриця помилок)
-            tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-            metrics['true_positives'] = tp
-            metrics['false_positives'] = fp
-            metrics['true_negatives'] = tn
-            metrics['false_negatives'] = fn
-
-            # Базові метрики
-            metrics['accuracy'] = accuracy_score(y_true, y_pred)
-            metrics['balanced_accuracy'] = balanced_accuracy_score(y_true, y_pred)
-            metrics['precision'] = precision_score(y_true, y_pred)
-            metrics['recall'] = recall_score(y_true, y_pred)  # Також відома як True Positive Rate (TPR)
-            metrics['f1_score'] = f1_score(y_true, y_pred)
-
-            # F-beta score
-            metrics[f'f{beta}_score'] = fbeta_score(y_true, y_pred, beta=beta)
-
-            # Додаткові метрики
-            metrics['specificity'] = tn / (tn + fp)  # Також відома як True Negative Rate (TNR)
-            metrics['false_positive_rate'] = fp / (fp + tn)  # 1 - specificity
-            metrics['false_negative_rate'] = fn / (fn + tp)  # 1 - recall
-            metrics['precision@n'] = precision_score(y_true, y_pred, zero_division=0)
-            metrics['cohen_kappa'] = cohen_kappa_score(y_true, y_pred)
-            metrics['matthews_corrcoef'] = matthews_corrcoef(y_true, y_pred)
-
-            # Метрики для незбалансованих даних
-            n_anomalies = np.sum(y_true == 1)
-            n_normal = np.sum(y_true == 0)
-            metrics['prevalence'] = n_anomalies / (n_anomalies + n_normal)
-
-            # Геометричне середнє precision і recall
-            if metrics['precision'] > 0 and metrics['recall'] > 0:
-                metrics['g_mean'] = np.sqrt(metrics['precision'] * metrics['recall'])
-            else:
-                metrics['g_mean'] = 0.0
-
-        except Exception as e:
-            metrics['error_threshold_dependent'] = str(e)
-
-        # 4. Розрахунок додаткових метрик для ранжування
-        try:
-            # Відсоток виявлених аномалій у верхніх N%
-            percentiles = [1, 5, 10, 20]
-            for p in percentiles:
-                n_top = int(np.ceil(len(y_true) * p / 100))
-                top_indices = np.argsort(anomaly_scores)[-n_top:]
-                top_precision = np.sum(y_true[top_indices]) / n_top
-                metrics[f'precision_top_{p}%'] = top_precision
-
-            # Детекція при різних рівнях виявлення аномалій
-            detection_rates = [0.5, 0.8, 0.9, 0.95, 0.99]
-            for rate in detection_rates:
-                n_anomalies = np.sum(y_true == 1)
-                n_to_detect = int(np.ceil(n_anomalies * rate))
-
-                if n_to_detect > 0:
-                    # Сортуємо за оцінками аномальності (у спадному порядку)
-                    sorted_indices = np.argsort(anomaly_scores)[::-1]
-                    sorted_true = y_true[sorted_indices]
-
-                    # Знаходимо позицію, де ми виявили вказаний відсоток аномалій
-                    cum_true_pos = np.cumsum(sorted_true)
-                    idx = np.argmax(cum_true_pos >= n_to_detect)
-
-                    # Порахуємо скільки спостережень потрібно перевірити
-                    total_to_check = idx + 1
-                    metrics[f'detection_rate_{int(rate * 100)}%'] = total_to_check / len(y_true)
-        except Exception as e:
-            metrics['error_ranking_metrics'] = str(e)
+            # Add stability metrics
+            stability_metrics = self._stability_metrics(anomaly_scores)
+            metrics.update(stability_metrics)
 
         return metrics
 
+    def _density_based_metrics(self, X, anomaly_scores, y_pred, k=10):
+        """
+        Calculate density-based metrics for evaluating anomaly detection
+        without ground truth.
+
+        Parameters:
+        -----------
+        X : array-like
+            Input data.
+        anomaly_scores : array-like
+            Anomaly scores from the detector.
+        y_pred : array-like
+            Binary predictions based on threshold.
+        k : int, default=10
+            Number of neighbors for density calculation.
+
+        Returns:
+        -----------
+        dict
+            Dictionary with density-based metrics.
+        """
+        metrics = {}
+
+        # Calculate local density using k-nearest neighbors
+        nn = NearestNeighbors(n_neighbors=k + 1)
+        nn.fit(X)
+        distances, _ = nn.kneighbors(X)
+        local_density = 1.0 / (np.mean(distances[:, 1:], axis=1) + 1e-10)
+
+        # Correlation between anomaly scores and local density
+        # Anomalies should have lower density (higher distances to neighbors)
+        corr, _ = spearmanr(-local_density, anomaly_scores)
+        metrics['density_correlation'] = corr if not np.isnan(corr) else 0
+
+        # Average relative density of detected anomalies vs normal points
+        anomaly_density = local_density[y_pred == 1].mean() if np.any(y_pred == 1) else 0
+        normal_density = local_density[y_pred == 0].mean() if np.any(y_pred == 0) else 0
+        metrics['relative_density'] = (normal_density / (anomaly_density + 1e-10)) if anomaly_density > 0 else 1.0
+
+        return metrics
+
+    def _stability_metrics(self, anomaly_scores):
+        """
+        Calculate metrics related to the stability and distribution of scores.
+
+        Parameters:
+        -----------
+        anomaly_scores : array-like
+            Anomaly scores from the detector.
+
+        Returns:
+        -----------
+        dict
+            Dictionary with stability metrics.
+        """
+        metrics = {}
+
+        # Score distribution statistics
+        metrics['score_mean'] = np.mean(anomaly_scores)
+        metrics['score_std'] = np.std(anomaly_scores)
+        metrics['score_skewness'] = (np.mean((anomaly_scores - metrics['score_mean']) ** 3) /
+                                     (metrics['score_std'] ** 3)) if metrics['score_std'] > 0 else 0
+
+        # Score normality (higher values indicate more non-normal distribution)
+        q25, q50, q75 = np.percentile(anomaly_scores, [25, 50, 75])
+        iqr = q75 - q25
+        metrics['score_normality'] = iqr / (2 * 0.6745 * metrics['score_std']) if metrics['score_std'] > 0 else 1.0
+
+        # Detect bimodality in score distribution
+        hist, _ = np.histogram(anomaly_scores, bins='auto')
+        peaks = np.where((hist[1:-1] > hist[:-2]) & (hist[1:-1] > hist[2:]))[0] + 1
+        metrics['bimodality'] = len(peaks)
+
+        return metrics
+
+    def compare_detectors(self, X, detector_scores_dict, y_true=None, contamination=0.1):
+        """
+        Compare multiple anomaly detectors.
+
+        Parameters:
+        -----------
+        X : array-like
+            Input data used for detection.
+        detector_scores_dict : dict
+            Dictionary with detector names as keys and anomaly scores as values.
+        y_true : array-like, optional
+            True labels if available (1 for anomalies, 0 for normal).
+        contamination : float, default=0.1
+            Expected proportion of anomalies in the dataset.
+
+        Returns:
+        -----------
+        dict
+            Dictionary with metrics for each detector.
+        """
+        results = {}
+
+        for detector_name, scores in detector_scores_dict.items():
+            results[detector_name] = self.evaluate(X, scores, y_true, contamination)
+
+        # Calculate agreement between detectors if multiple detectors
+        if len(detector_scores_dict) > 1:
+            agreement_metrics = self._calculate_detector_agreement(detector_scores_dict)
+            results['detector_agreement'] = agreement_metrics
+
+        return results
+
+    def _calculate_detector_agreement(self, detector_scores_dict):
+        """
+        Calculate agreement between different detectors.
+
+        Parameters:
+        -----------
+        detector_scores_dict : dict
+            Dictionary with detector names as keys and anomaly scores as values.
+
+        Returns:
+        -----------
+        dict
+            Dictionary with agreement metrics.
+        """
+        agreement = {}
+        detector_names = list(detector_scores_dict.keys())
+
+        # Calculate rank correlation between pairs of detectors
+        for i in range(len(detector_names)):
+            for j in range(i + 1, len(detector_names)):
+                name_i = detector_names[i]
+                name_j = detector_names[j]
+
+                scores_i = detector_scores_dict[name_i]
+                scores_j = detector_scores_dict[name_j]
+
+                # Spearman rank correlation
+                corr, _ = spearmanr(scores_i, scores_j)
+                agreement[f'spearman_{name_i}_{name_j}'] = corr if not np.isnan(corr) else 0
+
+                # Kendall tau rank correlation
+                corr, _ = kendalltau(scores_i, scores_j)
+                agreement[f'kendall_{name_i}_{name_j}'] = corr if not np.isnan(corr) else 0
+
+                # Top-K overlap (for top 5% of anomalies)
+                k = max(int(0.05 * len(scores_i)), 1)
+                top_k_i = np.argsort(scores_i)[-k:]
+                top_k_j = np.argsort(scores_j)[-k:]
+                overlap = len(set(top_k_i).intersection(set(top_k_j)))
+                agreement[f'top_k_overlap_{name_i}_{name_j}'] = overlap / k
+
+        return agreement

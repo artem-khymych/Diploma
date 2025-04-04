@@ -10,9 +10,6 @@ from project.ui.main_window import MainWindow
 from project.ui.inspector_window import InspectorWindow
 
 
-
-# from project.logic.calculations import calculate_sum
-
 class MainController:
     def __init__(self):
         self.view = MainWindow()
