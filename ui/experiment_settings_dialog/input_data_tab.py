@@ -240,6 +240,7 @@ class InputDataTabWidget(QWidget):
         # Встановлюємо видимість полів роздільників
         self.show_separator_fields(self.single_file_path.text(), 'single')
 
+
     def load_input_data_params(self, input_data_params):
         """
         Заповнює поля віджета даними з об'єкта InputDataParams

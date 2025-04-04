@@ -56,6 +56,9 @@ class Experiment(QObject):
         self.transformed_train = None
         self.transformed_test = None
 
+        self.train_metrics = None
+        self.test_metrics = None
+
     @property
     def name(self) -> str:
         return self._name
@@ -170,15 +173,14 @@ class Experiment(QObject):
 
         # Позначаємо експеримент як завершений
         self.is_finished = True
-        # TODO do warning and lable setting
         self.experiment_finished.emit(self.train_time)
         return
 
     def evaluate(self):
-        train_metrics, test_metrics = self._calculate_metrics()
-        print("Train metrics:", train_metrics)
-        print("Test metrics:", test_metrics)
-        self.experiment_evaluated.emit(train_metrics, test_metrics)
+        self.train_metrics, self.test_metrics = self._calculate_metrics()
+        print("Train metrics:", self.train_metrics)
+        print("Test metrics:", self.test_metrics)
+        self.experiment_evaluated.emit(self.train_metrics, self.test_metrics)
 
     def _load_data(self):
         """
