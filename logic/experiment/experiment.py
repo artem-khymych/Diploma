@@ -21,7 +21,8 @@ from sklearn.model_selection import train_test_split
 
 
 class Experiment(QObject):
-    experiment_finished = pyqtSignal(float, object, object)
+    experiment_finished = pyqtSignal(float)
+    experiment_evaluated = pyqtSignal(object, object)
 
     def __init__(self, id, task, model, params):
         super().__init__()
@@ -169,15 +170,15 @@ class Experiment(QObject):
 
         # Позначаємо експеримент як завершений
         self.is_finished = True
+        # TODO do warning and lable setting
+        self.experiment_finished.emit(self.train_time)
+        return
 
-        # Обчислення та виведення результатів метрик для обох наборів
+    def evaluate(self):
         train_metrics, test_metrics = self._calculate_metrics()
         print("Train metrics:", train_metrics)
         print("Test metrics:", test_metrics)
-
-        # Відправляємо сигнал з результатами експерименту
-        self.experiment_finished.emit(self.train_time, train_metrics, test_metrics)
-        return
+        self.experiment_evaluated.emit(train_metrics, test_metrics)
 
     def _load_data(self):
         """

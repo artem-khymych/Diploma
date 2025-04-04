@@ -210,11 +210,11 @@ class InputDataTabWidget(QWidget):
         # Створюємо радіокнопки для вибору методу кодування
         self.one_hot_radio = QRadioButton("One-Hot Encoding")
 
-        self.dummy_radio = QRadioButton("to_categorical")
+        self.to_categorical_radio = QRadioButton("to_categorical")
 
         # Додаємо радіокнопки до горизонтального контейнера
         encoding_options_layout.addWidget(self.one_hot_radio)
-        encoding_options_layout.addWidget(self.dummy_radio)
+        encoding_options_layout.addWidget(self.to_categorical_radio)
 
         # Додаємо контейнер з радіокнопками до основного контейнера групи
         categorical_encoding_layout.addLayout(encoding_options_layout)
@@ -325,7 +325,7 @@ class InputDataTabWidget(QWidget):
         if input_data_params.categorical_encoding == 'one-hot':
             self.one_hot_radio.setChecked(True)
         elif input_data_params.categorical_encoding == 'to_categorical':
-            self.dummy_radio.setChecked(True)
+            self.to_categorical_radio.setChecked(True)
 
     def create_data_mode_group(self):
         self.data_mode_group = QGroupBox("Режим роботи з даними")
@@ -392,6 +392,6 @@ class InputDataTabWidget(QWidget):
     def get_categorical_encoding_method(self):
         if self.one_hot_radio.isChecked():
             return "one-hot"
-        elif self.dummy_radio.isChecked():
+        elif self.to_categorical_radio.isChecked():
             return "to_categorical"
         return "one-hot"  # За замовчуванням

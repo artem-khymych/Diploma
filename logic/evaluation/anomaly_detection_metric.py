@@ -1,21 +1,4 @@
 import numpy as np
-import pandas as pd
-from sklearn.metrics import (
-    roc_auc_score, precision_recall_curve, auc, f1_score,
-    precision_score, recall_score, average_precision_score,
-    confusion_matrix, accuracy_score, balanced_accuracy_score,
-    cohen_kappa_score, matthews_corrcoef, fbeta_score
-)
-from scipy.stats import spearmanr, pearsonr
-
-from project.logic.evaluation.metric_strategy import MetricStrategy
-
-import numpy as np
-import pandas as pd
-from sklearn.metrics import (
-    roc_auc_score, average_precision_score, precision_recall_curve,
-    precision_score, recall_score, f1_score, confusion_matrix
-)
 from scipy.stats import spearmanr, kendalltau
 from sklearn.neighbors import NearestNeighbors
 from project.logic.evaluation.metric_strategy import MetricStrategy

@@ -61,6 +61,9 @@ class InputDataTabController(TabController):
 
         # Seed значення
         self.view.seed_spinbox.valueChanged.connect(lambda value: setattr(self.input_data_params, 'seed', value))
+        # зміна режиму обробки категоріальних
+        self.view.one_hot_radio.clicked.connect(self.on_categorical_encoding_changed)
+        self.view.to_categorical_radio.clicked.connect(self.on_categorical_encoding_changed)
 
     def init_view(self):
         # Встановлення режиму одного файлу за замовчуванням
@@ -110,6 +113,9 @@ class InputDataTabController(TabController):
             if self.input_data_params.single_file_path and os.path.splitext(self.input_data_params.single_file_path)[
                 1].lower() == '.csv':
                 self.load_column_names(self.input_data_params.single_file_path)
+
+    def on_categorical_encoding_changed(self):
+        self.experiment.input_data_params.categorical_encoding = self.view.get_categorical_encoding_method()
 
     def on_multi_separator_changed(self, value):
         # Оновлюємо значення роздільника для всіх файлів в режимі multi_files
@@ -359,6 +365,3 @@ class InputDataTabController(TabController):
     def get_input_params(self):
         self.update_model_from_view()
         return self.input_data_params.to_dict()
-
-
-

@@ -1,4 +1,5 @@
 from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtWidgets import QMessageBox
 
 from project.logic.experiment.experiment import Experiment
 from project.ui.experiment_settings_dialog.general_tab import GeneralTabWidget
@@ -7,14 +8,12 @@ from project.ui.experiment_settings_dialog.general_tab import GeneralTabWidget
 class GeneralSettingsController(QObject):
     """Контролер для вкладки загальних налаштувань"""
     # Сигнал для сповіщення про завершення експерименту
-    #experiment_finished = pyqtSignal(float)  # Параметр - час навчання в секундах
-
     def __init__(self, experiment: Experiment, view: GeneralTabWidget) -> None:
         super().__init__()
         self.experiment = experiment
         self.view = view
         self.init_view()
-        #self.connect_signals()
+        self.connect_signals()
 
     def init_view(self):
         """Ініціалізація початкового стану представлення"""
@@ -39,7 +38,13 @@ class GeneralSettingsController(QObject):
         self.view.experiment_name.setText(name)
 
     def connect_signals(self):
-        pass
+        self.view.evaluate_clicked.connect(self.experiment.evaluate)
+        self.experiment.experiment_finished.connect(self.show_training_time)
+
+    def show_training_time(self, train_time):
+        self.view.training_time.setText(f"На тренування витрачено {str(train_time)} секунд")
+        QMessageBox.information(self.view, "Успіх",
+                            "Модель успішно натренована.")
 
     def on_experiment_finished(self, training_time):
         """Обробник завершення експерименту"""

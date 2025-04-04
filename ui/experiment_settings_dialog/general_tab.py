@@ -59,15 +59,22 @@ class GeneralTabWidget(QWidget):
         # Кнопка для запуску експерименту
         self.button_layout = QHBoxLayout()
         self.start_button = QPushButton("Розпочати")
-        #self.evaluate_button = QPushButton("Оцінити")
 
-        #self.evaluate_button.setEnabled(False)
-        #self.button_layout.addWidget(self.evaluate_button)
+        self.evaluate_button = QPushButton("Оцінити")
+        self.training_time = QLabel("")
+        self.evaluate_button.setEnabled(False)
+
 
         # Додаємо зелений трикутник як піктограму
         self.start_button.setIcon(QIcon.fromTheme("media-playback-start"))  # Стандартна іконка відтворення
+
         self.start_button.clicked.connect(self.on_start_clicked)
+        self.evaluate_button.clicked.connect(self.on_evaluate_clicked)
+
         self.button_layout.addWidget(self.start_button)
+        self.button_layout.addWidget(self.evaluate_button)
+        self.button_layout.addWidget(self.training_time)
+
         self.button_layout.addStretch()
         layout.addLayout(self.button_layout)
 
@@ -77,11 +84,11 @@ class GeneralTabWidget(QWidget):
 
     def on_start_clicked(self):
         """Обробник натискання кнопки запуску"""
-        #self.evaluate_button.setEnabled(True)
+        self.evaluate_button.setEnabled(True)
         self.experiment_started.emit()
 
     def on_evaluate_clicked(self):
-        pass
+        self.evaluate_clicked.emit()
 
 
     def set_experiment_finished(self, training_time):
