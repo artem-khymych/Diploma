@@ -144,7 +144,7 @@ class Experiment(QObject):
             if hasattr(model_instance, 'predict'):
                 self.train_predictions = model_instance.predict(self.X_train)
                 self.test_predictions = model_instance.predict(self.X_test)
-            elif hasattr(model_instance, 'fit_predict') and self.task == task_names.CLUSTERING:
+            elif hasattr(model_instance, 'fit_predict') and (self.task == task_names.CLUSTERING or self.task == task_names.ANOMALY_DETECTION) :
                 # Для деяких кластеризаційних алгоритмів
                 # Для тренувального набору використовуємо результати з fit
                 self.train_predictions = model_instance.labels_ if hasattr(model_instance,

@@ -54,7 +54,7 @@ class AnomalyDetectionMetric(MetricStrategy):
 
         return metrics
 
-    def _density_based_metrics(self, X, anomaly_scores, y_pred, k=10):
+    def _density_based_metrics(self, X, anomaly_scores, y_pred, k=1):
         """
         Calculate density-based metrics for evaluating anomaly detection
         without ground truth.
@@ -76,9 +76,8 @@ class AnomalyDetectionMetric(MetricStrategy):
             Dictionary with density-based metrics.
         """
         metrics = {}
-
         # Calculate local density using k-nearest neighbors
-        nn = NearestNeighbors(n_neighbors=k + 1)
+        nn = NearestNeighbors(n_neighbors=k)
         nn.fit(X)
         distances, _ = nn.kneighbors(X)
         local_density = 1.0 / (np.mean(distances[:, 1:], axis=1) + 1e-10)
