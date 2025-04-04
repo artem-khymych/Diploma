@@ -25,7 +25,7 @@ class MetricsTabController(TabController):
         if train_metrics or test_metrics:
             self.update_view_metrics(train_metrics, test_metrics)
 
-    def on_metrics_updated(self, time=None, train_metrics=None, test_metrics=None):
+    def on_metrics_updated(self, train_metrics=None, test_metrics=None):
         """Обробник події оновлення метрик"""
         self.update_view_metrics(train_metrics, test_metrics)
 

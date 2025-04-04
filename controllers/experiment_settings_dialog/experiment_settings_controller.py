@@ -31,8 +31,9 @@ class ExperimentSettingsController:
         self.dialog.ok_btn.clicked.connect(self.on_accept)
         self.dialog.cancel_btn.clicked.connect(self.on_cancel)
         self.general_controller.view.experiment_started.connect(self.check_settings_and_run_experiment)
-        #self.experiment.experiment_finished.connect(self.general_controller)
         self.experiment.experiment_evaluated.connect(self.metrics_controller.on_metrics_updated)
+        self.experiment.experiment_evaluated.connect(lambda: self.dialog.tab_widget.setCurrentIndex(3))
+
 
     def check_settings_and_run_experiment(self):
 
