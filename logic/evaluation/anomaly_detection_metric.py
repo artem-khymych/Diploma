@@ -3,7 +3,6 @@ from scipy.stats import spearmanr, kendalltau
 from sklearn.neighbors import NearestNeighbors
 from project.logic.evaluation.metric_strategy import MetricStrategy
 
-#TODO test properly
 class AnomalyDetectionMetric(MetricStrategy):
     def evaluate(self, X, anomaly_scores, y_true=None, contamination=0.1):
         """

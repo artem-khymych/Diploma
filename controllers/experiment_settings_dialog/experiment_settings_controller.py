@@ -8,9 +8,12 @@ from project.logic.experiment.experiment import Experiment
 
 from project.ui.experiment_settings_dialog.experiment_settings_dialog import ExperimentSettingsDialog
 
+from sklearn.base import clone
+
 
 class ExperimentSettingsController:
     """Головний контролер для діалогу налаштувань експерименту"""
+
     def __init__(self, experiment: Experiment, dialog: ExperimentSettingsDialog):
         self.experiment = experiment
         self.dialog = dialog
@@ -33,7 +36,6 @@ class ExperimentSettingsController:
         self.general_controller.view.experiment_started.connect(self.check_settings_and_run_experiment)
         self.experiment.experiment_evaluated.connect(self.metrics_controller.on_metrics_updated)
         self.experiment.experiment_evaluated.connect(lambda: self.dialog.tab_widget.setCurrentIndex(3))
-
 
     def check_settings_and_run_experiment(self):
 
@@ -72,8 +74,32 @@ class ExperimentSettingsController:
             QMessageBox.warning(self.dialog, "Помилка", "Будь ласка, введіть назву експерименту.")
             self.dialog.tab_widget.setCurrentIndex(0)  # Перехід на вкладку "Загальні налаштування"
             return False
-        #TODO clear print
-        print(self.input_data_controller.input_data_params.to_dict())
+
+        try:
+            model = type(self.experiment.model)().set_params(**self.experiment.params)
+        except Exception as e:
+            QMessageBox.warning(self.dialog, "Хибні параметри", f"Винила помилка у налаштованих параметрах:\n {e}")
+            return False
+
+        #TODO fix&test
+        if self.validate_params_strict(model, self.experiment.params):
+            return True
+        else:
+            return False
+
+
+    def validate_params_strict(self, model_class, params):
+        from sklearn.utils._param_validation import validate_parameter_constraints
+
+        if not hasattr(model_class, "_parameter_constraints"):
+            return True
+
+        constraints = model_class._parameter_constraints
+        try:
+            validate_parameter_constraints(constraints, params, caller_name=model_class.__class__.__name__)
+        except Exception as e:
+            QMessageBox.warning(self.dialog, "Хибні параметри", f"Винила помилка у налаштованих параметрах:\n {e}")
+            return False
 
         return True
 
@@ -83,7 +109,7 @@ class ExperimentSettingsController:
         self.hyperparams_controller.update_model_from_view()
         self.input_data_controller.update_model_from_view()
 
-        #self.metrics_controller.update_model_from_view()
+        # self.metrics_controller.update_model_from_view()
 
     def show(self):
         while True:
@@ -91,5 +117,3 @@ class ExperimentSettingsController:
                 return self.input_data_controller.get_input_params()
             elif self.dialog.exec_() == QDialog.Rejected:
                 return
-
-

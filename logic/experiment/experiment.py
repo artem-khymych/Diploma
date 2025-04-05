@@ -99,7 +99,7 @@ class Experiment(QObject):
             self.metric_strategy = self.__get_metric_strategy_for_mlp()
 
     def __get_metric_strategy_for_mlp(self) -> MetricStrategy:
-        if self.model == MLPClassifier():
+        if isinstance(self.model, MLPClassifier):
             self.task = task_names.CLASSIFICATION
             return ClassificationMetric()
         elif self.model == MLPRegressor():
@@ -144,7 +144,8 @@ class Experiment(QObject):
             if hasattr(model_instance, 'predict'):
                 self.train_predictions = model_instance.predict(self.X_train)
                 self.test_predictions = model_instance.predict(self.X_test)
-            elif hasattr(model_instance, 'fit_predict') and (self.task == task_names.CLUSTERING or self.task == task_names.ANOMALY_DETECTION) :
+            elif hasattr(model_instance, 'fit_predict') and (
+                    self.task == task_names.CLUSTERING or self.task == task_names.ANOMALY_DETECTION):
                 # Для деяких кластеризаційних алгоритмів
                 # Для тренувального набору використовуємо результати з fit
                 self.train_predictions = model_instance.labels_ if hasattr(model_instance,
