@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QMessageBox
+import copy
 
 from project.logic.experiment.experiment import Experiment
 from project.ui.experiment_settings_dialog.general_tab import GeneralTabWidget
@@ -7,7 +8,8 @@ from project.ui.experiment_settings_dialog.general_tab import GeneralTabWidget
 
 class GeneralSettingsController(QObject):
     """Контролер для вкладки загальних налаштувань"""
-    # Сигнал для сповіщення про завершення експерименту
+    experiment_inherited = pyqtSignal(int)
+
     def __init__(self, experiment: Experiment, view: GeneralTabWidget) -> None:
         super().__init__()
         self.experiment = experiment
@@ -38,17 +40,26 @@ class GeneralSettingsController(QObject):
         self.view.experiment_name.setText(name)
 
     def connect_signals(self):
+        """Підключення обробників сигналів"""
         self.view.evaluate_clicked.connect(self.experiment.evaluate)
-        self.experiment.experiment_finished.connect(self.show_training_time)
+        self.experiment.experiment_finished.connect(self.on_experiment_finished)
 
-    def show_training_time(self, train_time):
-        self.view.training_time.setText(f"На тренування витрачено {str(train_time)} секунд")
-        QMessageBox.information(self.view, "Успіх",
-                            "Модель успішно натренована.")
+        # Підключаємо кнопку успадкування до відповідного метода
+        self.view.inherit_button.clicked.connect(self.on_experiment_inherited)
+
 
     def on_experiment_finished(self, training_time):
         """Обробник завершення експерименту"""
         print(f"Експеримент завершено за {training_time} секунд")
         self.experiment.is_finished = True
-        self.experiment.training_time = training_time
+        self.view.training_time.setText(f"На тренування витрачено {str(training_time)} секунд")
+        QMessageBox.information(self.view, "Успіх",
+                                "Модель успішно натренована.")
         self.view.set_experiment_finished(training_time)
+
+    def on_experiment_inherited(self):
+        """Обробник натискання кнопки успадкування експерименту"""
+        # Відправляємо сигнал з ID поточного експерименту для створення нового успадкованого експерименту
+        self.experiment_inherited.emit(self.experiment.id)
+        QMessageBox.information(self.view, "Успадкування",
+                                f"Створено новий експеримент на основі '{self.experiment.name}'")

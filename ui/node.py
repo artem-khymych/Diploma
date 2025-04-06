@@ -52,6 +52,12 @@ class Node(QGraphicsItem):
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
 
+    def itemChange(self, change, value):
+        """Обробляє зміни властивостей вузла."""
+        # Метод буде перевизначений в NodeController для кожного вузла
+        # для оновлення зв'язків при переміщенні
+        return super().itemChange(change, value)
+
     def _center_label(self):
         """Центрує текстову мітку відносно вузла."""
         text_width = self.label.boundingRect().width()
@@ -112,4 +118,3 @@ class Node(QGraphicsItem):
         painter.setBrush(brush)
         painter.setPen(Qt.NoPen)
         painter.drawEllipse(10, 0, self._current_radius, self._current_radius)
-

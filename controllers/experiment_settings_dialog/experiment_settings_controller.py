@@ -1,3 +1,4 @@
+from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QMessageBox, QDialog
 
 from project.controllers.experiment_settings_dialog.general_tab_controller import GeneralSettingsController
@@ -11,10 +12,12 @@ from project.ui.experiment_settings_dialog.experiment_settings_dialog import Exp
 from sklearn.base import clone
 
 
-class ExperimentSettingsController:
+class ExperimentSettingsController(QObject):
     """Головний контролер для діалогу налаштувань експерименту"""
+    experiment_inherited = pyqtSignal(int)
 
     def __init__(self, experiment: Experiment, dialog: ExperimentSettingsDialog):
+        super().__init__()
         self.experiment = experiment
         self.dialog = dialog
 
@@ -34,8 +37,17 @@ class ExperimentSettingsController:
         self.dialog.ok_btn.clicked.connect(self.on_accept)
         self.dialog.cancel_btn.clicked.connect(self.on_cancel)
         self.general_controller.view.experiment_started.connect(self.check_settings_and_run_experiment)
+        # evaluation started, update metrics and go to metrics tab
         self.experiment.experiment_evaluated.connect(self.metrics_controller.on_metrics_updated)
         self.experiment.experiment_evaluated.connect(lambda: self.dialog.tab_widget.setCurrentIndex(3))
+        # Підключаємо кнопку успадкування до методу обробника
+        self.general_controller.experiment_inherited.connect(self.on_experiment_inherited)
+
+    def on_experiment_inherited(self, parent_id):
+        """Передає сигнал успадкування далі"""
+        # Створюємо сигнал для передачі вгору по ієрархії
+
+        self.experiment_inherited.emit(parent_id)
 
     def check_settings_and_run_experiment(self):
 
@@ -81,12 +93,10 @@ class ExperimentSettingsController:
             QMessageBox.warning(self.dialog, "Хибні параметри", f"Винила помилка у налаштованих параметрах:\n {e}")
             return False
 
-        #TODO fix&test
         if self.validate_params_strict(model, self.experiment.params):
             return True
         else:
             return False
-
 
     def validate_params_strict(self, model_class, params):
         from sklearn.utils._param_validation import validate_parameter_constraints

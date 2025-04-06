@@ -30,12 +30,32 @@ class MainController:
         self.task_selector_controller.send_ml_model.connect(self.experiment_manager.get_ml_model)
         self.inspector_controller.node_controller.nodeInfoOpened.connect(self._show_experiment_settings_dialog)
 
+        # Підключаємо сигнал успадкування експерименту від контролера вузлів
+        self.inspector_controller.node_controller.experiment_inherited.connect(self._handle_experiment_inheritance)
+
     def _show_experiment_settings_dialog(self, node_id):
         """Функція для відображення діалогу налаштувань експерименту"""
         dialog = ExperimentSettingsDialog(self.view)
         experiment = self.experiment_manager.get_experiment(node_id)
         controller = ExperimentSettingsController(experiment, dialog)
+
+        # Підключаємо сигнал успадкування від діалогу налаштувань
+        controller.experiment_inherited.connect(self._handle_experiment_inheritance)
+
         controller.show()
+
+    def _handle_experiment_inheritance(self, parent_id):
+        """Обробник сигналу успадкування експерименту"""
+        # Створюємо новий вузол та успадковуємо дані експерименту
+        parent_experiment = self.experiment_manager.get_experiment(parent_id)
+
+        # Створюємо новий вузол через контролер вузлів
+        new_node = self.inspector_controller.node_controller.create_inherited_node(parent_id)
+
+        # Після створення вузла успадковуємо експеримент
+        if new_node and parent_experiment:
+            # Експеримент-менеджер створить новий експеримент з успадкованими даними
+            self.experiment_manager.inherit_experiment_from(parent_id, new_node.id)
 
     def show(self):
         self.view.show()

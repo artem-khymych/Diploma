@@ -20,11 +20,12 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 
+# TODO show all parents metrics in metrics tab of children
 class Experiment(QObject):
     experiment_finished = pyqtSignal(float)
     experiment_evaluated = pyqtSignal(object, object)
 
-    def __init__(self, id, task, model, params):
+    def __init__(self, id, task, model, params, parent=None):
         super().__init__()
         self.id: int = id
         self.task: str = task
@@ -58,6 +59,9 @@ class Experiment(QObject):
 
         self.train_metrics = None
         self.test_metrics = None
+
+        self.parent = parent
+        self.children = []
 
     @property
     def name(self) -> str:

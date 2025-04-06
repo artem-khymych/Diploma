@@ -10,6 +10,7 @@ class GeneralTabWidget(QWidget):
     experiment_started = pyqtSignal()
     evaluate_clicked = pyqtSignal()
 
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.description = ""
@@ -64,6 +65,9 @@ class GeneralTabWidget(QWidget):
         self.training_time = QLabel("")
         self.evaluate_button.setEnabled(False)
 
+        self.inherit_button = QPushButton("Inherit")
+        self.training_time = QLabel("")
+        self.inherit_button.setEnabled(False)
 
         # Додаємо зелений трикутник як піктограму
         self.start_button.setIcon(QIcon.fromTheme("media-playback-start"))  # Стандартна іконка відтворення
@@ -74,6 +78,7 @@ class GeneralTabWidget(QWidget):
         self.button_layout.addWidget(self.start_button)
         self.button_layout.addWidget(self.evaluate_button)
         self.button_layout.addWidget(self.training_time)
+        self.button_layout.addWidget(self.inherit_button)
 
         self.button_layout.addStretch()
         layout.addLayout(self.button_layout)
@@ -84,7 +89,7 @@ class GeneralTabWidget(QWidget):
 
     def on_start_clicked(self):
         """Обробник натискання кнопки запуску"""
-        self.evaluate_button.setEnabled(True)
+
         self.experiment_started.emit()
 
     def on_evaluate_clicked(self):
@@ -96,7 +101,8 @@ class GeneralTabWidget(QWidget):
         self.is_finished = True
         self.training_time = training_time
         self.status_value.setText("Завершено")
-        self.time_value.setText(f"{training_time} с")
+        self.evaluate_button.setEnabled(True)
+        self.inherit_button.setEnabled(True)
 
     def update_status(self, is_finished, training_time=None):
         """Оновлення статусу експерименту"""

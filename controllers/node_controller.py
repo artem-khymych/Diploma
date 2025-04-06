@@ -1,8 +1,10 @@
 from PyQt5.QtCore import Qt, QPoint, QTimer
-from PyQt5.QtWidgets import QGraphicsView, QMenu, QAction, QMessageBox
+from PyQt5.QtWidgets import QGraphicsView, QMenu, QAction, QMessageBox, QGraphicsItem
 
+from project.ui.Edge import Edge
 from project.ui.node import Node
 from PyQt5.QtCore import pyqtSignal, QObject
+
 
 class NodeController:
     """Контролер вузлів - відповідальний за створення, управління та взаємодію вузлів."""
@@ -11,6 +13,7 @@ class NodeController:
         self.scene = scene
         self.view = view
         self.nodes = []
+        self.edges = []  # Додаємо список для зберігання зв'язків
         self.active_node = None
         self.drag_timer = QTimer()
         self.drag_timer.setSingleShot(True)
@@ -22,13 +25,15 @@ class NodeController:
             node_created = pyqtSignal(object)  # Сигнал створення вузла
             node_deleted = pyqtSignal(int)  # Сигнал видалення вузла (передаємо ID)
             node_renamed = pyqtSignal(object)  # Сигнал перейменування вузла
-            nodeInfoOpened = pyqtSignal(int)
+            nodeInfoOpened = pyqtSignal(int)  # Сигнал відкриття інформації про вузол
+            experiment_inherited = pyqtSignal(int)  # Сигнал для успадкування експерименту
 
         self.signals = SignalEmitter()
         self.node_created = self.signals.node_created
         self.node_deleted = self.signals.node_deleted
         self.node_renamed = self.signals.node_renamed
         self.nodeInfoOpened = self.signals.nodeInfoOpened
+        self.experiment_inherited = self.signals.experiment_inherited
 
         self.scene.installEventFilter(view)
         view.mousePressEvent = self._view_mouse_press
@@ -36,22 +41,27 @@ class NodeController:
         view.mouseMoveEvent = self._view_mouse_move
         view.contextMenuEvent = self._view_context_menu
 
-    def create_node(self):
-        """Створює новий вузол в центрі видимої області."""
+    def create_node(self, x=None, y=None):
+        """Створює новий вузол в заданій або у центрі видимої області."""
         node = Node()
-        # Отримуємо видиму область перегляду
-        viewport_rect = self.view.viewport().rect()
 
-        # Перетворюємо центр видимої області в координати сцени
-        viewport_center = QPoint(viewport_rect.width() // 2, viewport_rect.height() // 2)
-        scene_center = self.view.mapToScene(viewport_center)
+        if x is None or y is None:
+            # Отримуємо видиму область перегляду
+            viewport_rect = self.view.viewport().rect()
 
-        # Враховуємо розмір вузла для точного розташування в центрі
-        node_width = node.boundingRect().width()
-        node_height = node.boundingRect().height()
+            # Перетворюємо центр видимої області в координати сцени
+            viewport_center = QPoint(viewport_rect.width() // 2, viewport_rect.height() // 2)
+            scene_center = self.view.mapToScene(viewport_center)
 
-        # Встановлюємо позицію вузла в центрі видимої області
-        node.setPos(scene_center.x() - node_width / 2, scene_center.y() - node_height / 2)
+            # Враховуємо розмір вузла для точного розташування в центрі
+            node_width = node.boundingRect().width()
+            node_height = node.boundingRect().height()
+
+            # Встановлюємо позицію вузла в центрі видимої області
+            node.setPos(scene_center.x() - node_width / 2, scene_center.y() - node_height / 2)
+        else:
+            # Встановлюємо позицію вузла в заданих координатах
+            node.setPos(x, y)
 
         self.scene.addItem(node)
         self.nodes.append(node)
@@ -59,6 +69,85 @@ class NodeController:
         self.node_created.emit(node)
 
         return node
+
+    def create_inherited_node(self, parent_node_id):
+        """Створює новий вузол, який успадковується від вузла з вказаним ID."""
+        # Знаходимо батьківський вузол за ID
+        parent_node = self.find_node_by_id(parent_node_id)
+
+        if not parent_node:
+            print(f"Помилка: вузол з ID {parent_node_id} не знайдено")
+            return None
+
+        # Визначаємо позицію для нового вузла (трохи праворуч і нижче батьківського)
+        parent_pos = parent_node.pos()
+        new_x = parent_pos.x() + 150  # Зміщення вправо
+        new_y = parent_pos.y() + 100  # Зміщення вниз
+
+        # Створюємо новий вузол
+        new_node = self.create_node(new_x, new_y)
+
+        # Встановлюємо назву, що вказує на успадкування
+        new_node.set_name(f"Успадкований від {parent_node.get_name()}")
+
+        # Створюємо зв'язок між вузлами
+        self.create_edge(parent_node, new_node)
+
+        return new_node
+
+    def create_edge(self, source_node, target_node):
+        """Створює зв'язок між двома вузлами."""
+        edge = Edge(source_node, target_node)
+        self.scene.addItem(edge)
+        self.edges.append(edge)
+
+        # Підключаємо оновлення зв'язку при зміні позиції вузлів
+        source_node.itemChange = self._wrap_item_change(source_node, edge)
+        target_node.itemChange = self._wrap_item_change(target_node, edge)
+
+        return edge
+
+    def _wrap_item_change(self, node, edge):
+        """Створює обгортку для методу itemChange вузла, щоб оновлювати зв'язок."""
+        original_item_change = node.itemChange if hasattr(node, 'itemChange') else lambda change, value: value
+
+        def wrapped_item_change(change, value):
+            result = original_item_change(change, value)
+            if change == QGraphicsItem.ItemPositionChange or change == QGraphicsItem.ItemPositionHasChanged:
+                edge.update_position()
+            return result
+
+        return wrapped_item_change
+
+    def find_node_by_id(self, node_id):
+        """Знаходить вузол за його ID."""
+        for node in self.nodes:
+            if node.id == node_id:
+                return node
+        return None
+
+    def delete_node(self, node):
+        """Видаляє вузол та всі пов'язані з ним зв'язки."""
+        if node in self.nodes:
+            node_id = node.id
+
+            # Видаляємо всі зв'язки, пов'язані з цим вузлом
+            edges_to_remove = [edge for edge in self.edges
+                               if edge.source_node == node or edge.target_node == node]
+
+            for edge in edges_to_remove:
+                self.scene.removeItem(edge)
+                self.edges.remove(edge)
+
+            # Видаляємо сам вузол
+            self.scene.removeItem(node)
+            self.nodes.remove(node)
+
+            if self.active_node == node:
+                self.active_node = None
+
+            # Сигналізуємо про видалення вузла
+            self.node_deleted.emit(node_id)
 
     def open_node_info(self, node):
         """Відкриває діалогове вікно з інформацією про вузол."""
@@ -69,18 +158,6 @@ class NodeController:
         node.start_editing_name()
         # Підписуємось на сигнал завершення редагування
         node.name_editor.editingFinished.connect(lambda: self.node_renamed.emit(node))
-
-    def delete_node(self, node):
-        """Видаляє вузол зі сцени та зі списку вузлів."""
-        if node in self.nodes:
-            node_id = node.id
-            self.scene.removeItem(node)
-            self.nodes.remove(node)
-            if self.active_node == node:
-                self.active_node = None
-
-            # Сигналізуємо про видалення вузла
-            self.node_deleted.emit(node_id)
 
     def center_on_node(self, node_id):
         """Центрує вид на вузлі за його ID."""
@@ -172,4 +249,3 @@ class NodeController:
         if self.current_press_node:
             self.active_node = self.current_press_node
             self.active_node.set_active(True)
-
