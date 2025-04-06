@@ -9,7 +9,6 @@ from project.logic.experiment.experiment import Experiment
 
 from project.ui.experiment_settings_dialog.experiment_settings_dialog import ExperimentSettingsDialog
 
-from sklearn.base import clone
 
 
 class ExperimentSettingsController(QObject):

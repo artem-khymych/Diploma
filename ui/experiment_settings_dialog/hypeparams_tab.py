@@ -16,7 +16,5 @@ class HyperparamsTabWidget(QWidget):
         layout = QVBoxLayout()
         self.params_widget = ParameterEditorWidget()
         self.params_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.save_button = QPushButton("Save")
         layout.addWidget(self.params_widget)
-        layout.addWidget(self.save_button)
         self.setLayout(layout)

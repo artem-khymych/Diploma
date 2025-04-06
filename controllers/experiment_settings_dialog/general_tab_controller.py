@@ -6,6 +6,7 @@ from project.logic.experiment.experiment import Experiment
 from project.ui.experiment_settings_dialog.general_tab import GeneralTabWidget
 
 
+# TODO edit name display throught separate signal
 class GeneralSettingsController(QObject):
     """Контролер для вкладки загальних налаштувань"""
     experiment_inherited = pyqtSignal(int)

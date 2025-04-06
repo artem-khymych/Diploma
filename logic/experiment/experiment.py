@@ -16,7 +16,6 @@ from project.logic.experiment.input_data_params import InputDataParams
 from project.logic.modules import task_names
 import time
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 
 

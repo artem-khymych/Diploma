@@ -10,11 +10,11 @@ class HyperparamsTabController(TabController, ABC):
 
     def __init__(self, experiment: Experiment, view: HyperparamsTabWidget):
         super().__init__(experiment, view)
-        self.connect_signals()
         self.init_view()
+        self.connect_signals()
 
     def connect_signals(self):
-        self.view.save_button.clicked.connect(self._update_params)
+        pass
 
     def init_view(self):
         self.view.params_widget.populate_table(self.experiment.params)
