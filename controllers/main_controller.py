@@ -5,11 +5,10 @@ from project.controllers.inspector_controller import InspectorController
 from project.controllers.task_selector_controller import TaskSelectorController
 from project.logic.experiment_manager import ExperimentManager
 from project.logic.modules.models_manager import ModelsManager
-from project.ui.experiment_settings_dialog.experiment_settings_dialog import ExperimentSettingsDialog
-from project.ui.main_window import MainWindow
-from project.ui.inspector_window import InspectorWindow
+from project.ui.experiment_settings_dialog.experiment_settings_dialog import ExperimentSettingsWindow
 
-#TODO test comparision
+from project.ui.main_window import MainWindow
+
 class MainController:
     def __init__(self):
         self.view = MainWindow()
@@ -36,11 +35,11 @@ class MainController:
 
     def _show_experiment_settings_dialog(self, node_id):
         """Функція для відображення діалогу налаштувань експерименту"""
-        dialog = ExperimentSettingsDialog(self.view)
+        dialog = ExperimentSettingsWindow(self.view)
         experiment = self.experiment_manager.get_experiment(node_id)
         self.experiment_settings_controller = ExperimentSettingsController(experiment, dialog)
 
-        # Підключаємо сигнал успадкування від діалогу налаштувань
+        # Підключаємо сигнал успадкуванняід діалогу налаштувань
         self.experiment_settings_controller.experiment_inherited.connect(self._handle_experiment_inheritance)
         self.experiment_settings_controller.metrics_controller.compare_experiments.connect(self.experiment_manager.show_comparison_dialog)
         self.experiment_settings_controller.show()
