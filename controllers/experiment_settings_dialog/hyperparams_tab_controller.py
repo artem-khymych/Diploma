@@ -5,7 +5,7 @@ from project.logic.experiment.experiment import Experiment
 from project.ui.experiment_settings_dialog.hypeparams_tab import HyperparamsTabWidget
 
 
-class HyperparamsTabController(TabController, ABC):
+class HyperparamsTabController(TabController):
     """Контролер для вкладки параметрів моделі"""
 
     def __init__(self, experiment: Experiment, view: HyperparamsTabWidget):

@@ -9,7 +9,7 @@ from project.ui.experiment_settings_dialog.experiment_settings_dialog import Exp
 from project.ui.main_window import MainWindow
 from project.ui.inspector_window import InspectorWindow
 
-
+#TODO test comparision
 class MainController:
     def __init__(self):
         self.view = MainWindow()
@@ -33,16 +33,17 @@ class MainController:
         # Підключаємо сигнал успадкування експерименту від контролера вузлів
         self.inspector_controller.node_controller.experiment_inherited.connect(self._handle_experiment_inheritance)
 
+
     def _show_experiment_settings_dialog(self, node_id):
         """Функція для відображення діалогу налаштувань експерименту"""
         dialog = ExperimentSettingsDialog(self.view)
         experiment = self.experiment_manager.get_experiment(node_id)
-        controller = ExperimentSettingsController(experiment, dialog)
+        self.experiment_settings_controller = ExperimentSettingsController(experiment, dialog)
 
         # Підключаємо сигнал успадкування від діалогу налаштувань
-        controller.experiment_inherited.connect(self._handle_experiment_inheritance)
-
-        controller.show()
+        self.experiment_settings_controller.experiment_inherited.connect(self._handle_experiment_inheritance)
+        self.experiment_settings_controller.metrics_controller.compare_experiments.connect(self.experiment_manager.show_comparison_dialog)
+        self.experiment_settings_controller.show()
 
     def _handle_experiment_inheritance(self, parent_id):
         """Обробник сигналу успадкування експерименту"""

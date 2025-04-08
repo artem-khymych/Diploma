@@ -10,7 +10,7 @@ from project.logic.experiment.experiment import Experiment
 from project.ui.experiment_settings_dialog.experiment_settings_dialog import ExperimentSettingsDialog
 
 
-
+#TODO migarte to window not a dialog
 class ExperimentSettingsController(QObject):
     """Головний контролер для діалогу налаштувань експерименту"""
     experiment_inherited = pyqtSignal(int)
@@ -41,6 +41,7 @@ class ExperimentSettingsController(QObject):
         self.experiment.experiment_evaluated.connect(lambda: self.dialog.tab_widget.setCurrentIndex(3))
         # Підключаємо кнопку успадкування до методу обробника
         self.general_controller.experiment_inherited.connect(self.on_experiment_inherited)
+        #self.metrics_controller.compare_experiments.connect(self.show_comparison_dialog)
 
     def on_experiment_inherited(self, parent_id):
         """Передає сигнал успадкування далі"""
@@ -126,3 +127,4 @@ class ExperimentSettingsController(QObject):
                 return self.input_data_controller.get_input_params()
             elif self.dialog.exec_() == QDialog.Rejected:
                 return
+

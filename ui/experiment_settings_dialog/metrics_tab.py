@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QVBoxLayout, QTableWidget, QHeaderView, QTableWidgetItem, QWidget
+from PyQt5.QtWidgets import QVBoxLayout, QTableWidget, QHeaderView, QTableWidgetItem, QWidget, QPushButton
 
 
 class MetricsTabWidget(QWidget):
@@ -18,7 +18,11 @@ class MetricsTabWidget(QWidget):
         self.table.setHorizontalHeaderLabels(["Metric", "Train Value", "Test Value"])
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)  # Забороняємо редагування
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        self.compare_button = QPushButton("Порівняти моделі")
+
         self.layout.addWidget(self.table)
+        self.layout.addWidget(self.compare_button)
 
     def update_metrics(self, metrics_data: dict):
         """Оновлює значення метрик та активує таблицю

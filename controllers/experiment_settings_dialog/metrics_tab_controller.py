@@ -1,12 +1,16 @@
+from PyQt5.QtCore import pyqtSignal
+
 from project.controllers.experiment_settings_dialog.tab_controller import TabController
 from project.logic.experiment.experiment import Experiment
 
 
 class MetricsTabController(TabController):
     """Контролер для вкладки параметрів оцінки"""
+    compare_experiments = pyqtSignal(int)
 
     def __init__(self, experiment: Experiment, view):
         super().__init__(experiment, view)
+        self.experiment = experiment
         self.connect_signals()
         self.init_view()
 
@@ -15,6 +19,7 @@ class MetricsTabController(TabController):
         # Підключення сигналів експерименту, якщо вони доступні
         if hasattr(self.experiment, 'metrics_updated'):
             self.experiment.metrics_updated.connect(self.on_metrics_updated)
+        self.view.compare_button.clicked.connect(self.on_compare_button_clicked)
 
     def init_view(self):
         """Ініціалізація представлення"""
@@ -47,3 +52,6 @@ class MetricsTabController(TabController):
             }
 
         self.view.update_metrics(metrics_data)
+
+    def on_compare_button_clicked(self):
+        self.compare_experiments.emit(self.experiment.id)

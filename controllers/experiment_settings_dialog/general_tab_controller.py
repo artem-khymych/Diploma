@@ -53,7 +53,7 @@ class GeneralSettingsController(QObject):
         """Обробник завершення експерименту"""
         print(f"Експеримент завершено за {training_time} секунд")
         self.experiment.is_finished = True
-        self.view.training_time.setText(f"На тренування витрачено {str(training_time)} секунд")
+        self.view.time_label.setText(f"На тренування витрачено {str(training_time)} секунд")
         QMessageBox.information(self.view, "Успіх",
                                 "Модель успішно натренована.")
         self.view.set_experiment_finished(training_time)
