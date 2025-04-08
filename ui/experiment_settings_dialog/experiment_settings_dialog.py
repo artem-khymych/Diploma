@@ -21,7 +21,8 @@ class ExperimentSettingsWindow(QMainWindow):
         """Ініціалізація інтерфейсу"""
         self.setWindowTitle("Налаштування експерименту")
         self.setMinimumWidth(700)
-        self.setMinimumHeight(900)
+        self.setMinimumHeight(800)
+        self.move(100,100)
 
         # Create central widget for QMainWindow
         central_widget = QWidget()
@@ -43,18 +44,6 @@ class ExperimentSettingsWindow(QMainWindow):
         self.tab_widget.addTab(self.evaluation_tab, "Metrics")
 
         main_layout.addWidget(self.tab_widget)
-
-        # Кнопки дій
-        buttons_layout = QHBoxLayout()
-        self.ok_btn = QPushButton("OK")
-        self.ok_btn.clicked.connect(self.accept)
-        self.cancel_btn = QPushButton("Скасувати")
-        self.cancel_btn.clicked.connect(self.reject)
-        buttons_layout.addWidget(self.ok_btn)
-        buttons_layout.addWidget(self.cancel_btn)
-        main_layout.addLayout(buttons_layout)
-
-        # Set the central widget of the QMainWindow
         self.setCentralWidget(central_widget)
 
     def accept(self):
@@ -62,16 +51,6 @@ class ExperimentSettingsWindow(QMainWindow):
         self.window_accepted.emit()
         self.close()
 
-    def reject(self):
-        """Equivalent to QDialog's reject method"""
-        self.window_rejected.emit()
-        self.close()
-
-    def closeEvent(self, event):
-        """Handle window close event (X button)"""
-        # Default to reject when window is closed with X button
-        self.window_rejected.emit()
-        event.accept()
 
 """
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTabWidget, QHBoxLayout, QPushButton

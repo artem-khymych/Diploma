@@ -29,7 +29,7 @@ class ExperimentSettingsController(QObject):
         self.metrics_controller = MetricsTabController(experiment, window.evaluation_tab)
 
         # Підключення сигналів
-        self.window.ok_btn.setAutoDefault(False)
+        #self.window.ok_btn.setAutoDefault(False)
         self.connect_signals()
 
     def connect_signals(self):
