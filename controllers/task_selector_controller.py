@@ -1,3 +1,5 @@
+from typing import Dict
+
 from PyQt5.QtCore import Qt, pyqtSignal, QObject
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QPushButton, QLabel, QVBoxLayout, QDialog, QRadioButton, QButtonGroup, QListWidget
@@ -11,7 +13,7 @@ from project.controllers.parameter_editor_controller import ParameterEditorContr
 class TaskSelectorController(QObject):
     request_models_dict = pyqtSignal(str)
 
-    own_nn_selected = pyqtSignal()
+    own_nn_selected = pyqtSignal(str)
     send_ml_model = pyqtSignal(str, object, object)
 
     _instance = None  # Змінна класу для зберігання екземпляра
@@ -103,9 +105,12 @@ class TaskSelectorController(QObject):
         selected_button = group.checkedButton()
         selected_task = group.checkedButton().text()
         self.selected_task = selected_task
-        # TODO handle own nn selection
+        if selected_task == task_names.OWN_NN:
+            dialog.accept()
+            self.own_nn_selected.emit(selected_task)
+            return None
+
         if selected_button:
-            # Create final placeholder page
             placeholder_dialog = QDialog(self.sender)
             placeholder_dialog.setWindowTitle("Selection Confirmation")
             placeholder_dialog.setGeometry(200, 200, 400, 300)
@@ -120,9 +125,10 @@ class TaskSelectorController(QObject):
             title_label.setFont(QFont('Arial', 14))
             layout.addWidget(title_label)
             dialog.accept()
+
             self.request_models_dict.emit(selected_task)
 
-    def show_model_selection_dialog(self, models_dict):
+    def show_model_selection_dialog(self, models_dict:Dict):
         """
             Show a dialog with all models from the dictionary and return the selected model
 
@@ -132,7 +138,10 @@ class TaskSelectorController(QObject):
             Returns:
                 Instance of the selected model or None if canceled
             """
-        # Create dialog
+
+
+
+
         dialog = QDialog(self.sender)
         dialog.setWindowTitle("Select Model")
         dialog.setGeometry(200, 200, 500, 600)
@@ -192,12 +201,14 @@ class TaskSelectorController(QObject):
         result = dialog.exec_()
 
         # Return selected model or None if canceled
+
         return selected_model if result == QDialog.Accepted else None
 
     def handle_models_dict_response(self, models_dict):
         choosen_model = (self.show_model_selection_dialog(models_dict))
+        self.send_data_to_experiment_manager(choosen_model, choosen_model.get_params())
 
-        dialog = QDialog(self.sender)
+        """dialog = QDialog(self.sender)
         dialog.setWindowTitle("Set model parameters")
         dialog.setGeometry(200, 200, 400, 600)
         layout = QVBoxLayout(dialog)
@@ -220,7 +231,7 @@ class TaskSelectorController(QObject):
         save_btn.clicked.connect(on_get_parameters)
         dialog.exec_()
 
-        self.send_data_to_experiment_manager(choosen_model, params)
+        self.send_data_to_experiment_manager(choosen_model, params)"""
 
     def send_data_to_experiment_manager(self, model, params):
         print(model, params)
