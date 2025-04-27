@@ -134,3 +134,37 @@ class ClusteringMetric(MetricStrategy):
 
         return metrics
 
+    def get_metainformation(self):
+        """
+        Returns a dictionary with information about metrics optimization direction.
+        For each metric, indicates whether higher (True) or lower (False) values
+        are better.
+
+        :returns:
+        -----------
+        dict
+            Dictionary with metric names as keys and boolean values indicating
+            if higher values are better (True) or lower values are better (False).
+        """
+        metainformation = {
+            # Internal metrics
+            'silhouette_score': True,  # Higher is better (range: -1 to 1)
+            'calinski_harabasz_score': True,  # Higher is better (no upper bound)
+            'davies_bouldin_score': False,  # Lower is better (non-negative values)
+            'inertia': False,  # Lower is better (sum of squared distances)
+            'avg_within_cluster_distance': False,  # Lower is better (more compact clusters)
+            'avg_between_cluster_distance': True,  # Higher is better (more separated clusters)
+
+            # External metrics (requiring true labels)
+            'adjusted_rand_score': True,  # Higher is better (range: -0.5 to 1)
+            'normalized_mutual_info_score': True,  # Higher is better (range: 0 to 1)
+            'adjusted_mutual_info_score': True,  # Higher is better (range: 0 to 1)
+            'homogeneity_score': True,  # Higher is better (range: 0 to 1)
+            'completeness_score': True,  # Higher is better (range: 0 to 1)
+            'v_measure_score': True,  # Higher is better (range: 0 to 1)
+            'fowlkes_mallows_score': True,  # Higher is better (range: 0 to 1)
+            'purity': True  # Higher is better (range: 0 to 1)
+        }
+
+        return metainformation
+

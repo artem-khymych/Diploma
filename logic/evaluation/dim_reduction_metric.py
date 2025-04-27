@@ -169,3 +169,49 @@ class DimReduction(MetricStrategy):
                 metrics['local_scaling_correlation'] = float('nan')
 
         return metrics
+
+    def get_metainformation(self):
+        """
+        Returns a dictionary with information about metrics optimization direction.
+        For each metric, indicates whether higher (True) or lower (False) values
+        are better.
+
+        :returns:
+        -----------
+        dict
+            Dictionary with metric names as keys and boolean values indicating
+            if higher values are better (True) or lower values are better (False).
+        """
+        metainformation = {
+            # Correlation metrics - higher is better
+            'pearson_correlation': True,
+            'spearman_correlation': True,
+
+            # Neighborhood preservation metrics - higher is better
+            'trustworthiness': True,
+            'continuity': True,
+
+            # Variance retention - higher is better
+            'variance_retention_ratio': True,
+
+            # Reconstruction error metrics - lower is better
+            'reconstruction_mse': False,
+            'reconstruction_rmse': False,
+            'relative_reconstruction_error': False,
+
+            # Explained variance - higher is better
+            'explained_variance': True,
+
+            # KNN preservation metrics - higher is better
+            'knn_preservation_5': True,
+            'knn_preservation_10': True,
+            'knn_preservation_20': True,
+
+            # Stress ratio - lower is better
+            'stress_ratio': False,
+
+            # Local structure preservation - higher is better
+            'local_scaling_correlation': True
+        }
+
+        return metainformation

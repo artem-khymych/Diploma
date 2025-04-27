@@ -221,3 +221,58 @@ class DensityEstimationMetric(MetricStrategy):
             mle_dim = X.shape[1]  # Default to original dimensionality
 
         return mle_dim
+
+    def get_metainformation(self):
+        """
+        Returns a dictionary with information about metrics optimization direction.
+        For each metric, indicates whether higher (True) or lower (False) values
+        are better.
+
+        :returns:
+        -----------
+        dict
+            Dictionary with metric names as keys and boolean values indicating
+            if higher values are better (True) or lower values are better (False).
+        """
+        metainformation = {
+            # Model information metrics (context dependent)
+            'n_components': None,  # Context dependent
+            'effective_n_components': None,  # Context dependent
+
+            # Information criteria (lower is better)
+            'bic': False,
+            'aic': False,
+
+            # Cluster quality metrics
+            'silhouette_score': True,  # Higher is better
+            'calinski_harabasz_score': True,  # Higher is better
+            'davies_bouldin_score': False,  # Lower is better
+
+            # Log-likelihood (higher is better)
+            'log_likelihood': True,
+
+            # Entropy metrics (context dependent)
+            'cluster_entropy': None,  # Context dependent - depends on expected number of clusters
+            'avg_assignment_entropy': False,  # Lower is better - indicates more confident assignments
+
+            # Concentration parameter (context dependent)
+            'dirichlet_concentration': None,  # Context dependent
+
+            # Dimensionality metrics
+            'original_dim': None,  # Context dependent - just informational
+            'estimated_intrinsic_dim': None,  # Context dependent - should match true intrinsic dim
+            'mle_intrinsic_dim': None,  # Context dependent - should match true intrinsic dim
+            'effective_rank': None,  # Context dependent - should match true intrinsic dim
+
+            # Dimensionality errors (lower is better)
+            'dim_error': False,
+            'dim_error_ratio': False,
+
+            # Eigenvalue metrics
+            'eigenvalue_decay_rate': True,  # Higher is better - indicates more concentrated information
+            'max_eigenvalue': True,  # Higher is better - indicates stronger principal direction
+            'min_eigenvalue': None,  # Context dependent
+            'eigenvalue_ratio': True  # Higher is better - indicates better separation of signal and noise
+        }
+
+        return metainformation

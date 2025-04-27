@@ -201,3 +201,40 @@ class AnomalyDetectionMetric(MetricStrategy):
                 agreement[f'top_k_overlap_{name_i}_{name_j}'] = overlap / k
 
         return agreement
+    def get_metainformation(self):
+        """
+        Returns a dictionary with information about metrics optimization direction.
+        For each metric, indicates whether higher (True) or lower (False) values
+        are better.
+
+        :returns:
+        -----------
+        dict
+            Dictionary with metric names as keys and boolean values indicating
+            if higher values are better (True) or lower values are better (False).
+        """
+        metainformation = {
+            # Unsupervised metrics
+            # For anomaly detection, num_detected_anomalies is context-dependent
+            # It should match the expected contamination rate
+            'num_detected_anomalies': None,  # Context-dependent
+            'detection_rate': None,  # Context-dependent
+
+            # Density-based metrics
+            'density_correlation': True,  # Higher correlation between anomaly scores and low density is better
+            'relative_density': True,  # Higher ratio of normal to anomaly density is better
+
+            # Stability metrics
+            'score_mean': None,  # Context-dependent
+            'score_std': None,  # Context-dependent
+            'score_skewness': None,  # Context-dependent
+            'score_normality': True,  # Higher values indicate more non-normal distribution (better for anomaly scores)
+            'bimodality': True,  # Higher number of peaks may indicate better separation
+
+            # Agreement metrics (these will be dynamically named based on detector pairs)
+            'spearman': True,  # Higher agreement between detectors is generally better
+            'kendall': True,  # Higher agreement between detectors is generally better
+            'top_k_overlap': True  # Higher overlap in top anomalies is better
+        }
+
+        return metainformation

@@ -36,7 +36,7 @@ class ClassificationMetric(MetricStrategy):
         metrics['balanced_accuracy'] = balanced_accuracy_score(y_true, y_pred)
 
         cm = confusion_matrix(y_true, y_pred)
-        #metrics['confusion_matrix'] = cm
+        # metrics['confusion_matrix'] = cm
 
         # for binary classification
         if len(np.unique(y_true)) == 2:
@@ -65,7 +65,7 @@ class ClassificationMetric(MetricStrategy):
             metrics['f1_micro'] = f1_score(y_true, y_pred, average='micro')
             metrics['f1_weighted'] = f1_score(y_true, y_pred, average='weighted')
 
-            #metrics['classification_report'] = classification_report(y_true, y_pred)
+            # metrics['classification_report'] = classification_report(y_true, y_pred)
             if y_prob is not None and hasattr(y_prob, 'shape') and len(y_prob.shape) > 1:
                 try:
                     metrics['log_loss'] = log_loss(y_true, y_prob)
@@ -77,3 +77,42 @@ class ClassificationMetric(MetricStrategy):
 
         return metrics
 
+    def get_metainformation(self):
+        """
+        Returns a dictionary with information about metrics optimization direction.
+        For each metric, indicates whether higher (True) or lower (False) values
+        are better.
+
+        :returns:
+        -----------
+        dict
+            Dictionary with metric names as keys and boolean values indicating
+            if higher values are better (True) or lower values are better (False).
+        """
+        metainformation = {
+            # Higher is better metrics (True)
+            'accuracy': True,
+            'balanced_accuracy': True,
+            'precision': True,
+            'recall': True,
+            'f1': True,
+            'specificity': True,
+            'roc_auc': True,
+            'pr_auc': True,
+            'precision_macro': True,
+            'precision_micro': True,
+            'precision_weighted': True,
+            'recall_macro': True,
+            'recall_micro': True,
+            'recall_weighted': True,
+            'f1_macro': True,
+            'f1_micro': True,
+            'f1_weighted': True,
+            'cohen_kappa': True,
+            'matthews_corrcoef': True,
+
+            # Lower is better metrics (False)
+            'log_loss': False
+        }
+
+        return metainformation

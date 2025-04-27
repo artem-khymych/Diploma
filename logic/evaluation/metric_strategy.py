@@ -1,7 +1,9 @@
 # patern strategy
-# TODO fill
 class MetricStrategy:
     def evaluate(self, y_true, y_pred):
+        raise NotImplementedError
+
+    def get_metainformation(self):
         raise NotImplementedError
 
 
@@ -18,7 +20,7 @@ import warnings
 
 
 class TimeSeriesMetric(MetricStrategy):
-    def evaluate(y_true, y_pred, y_naive=None, residuals=None, alpha=0.05,
+    def evaluate(self,y_true, y_pred, y_naive=None, residuals=None, alpha=0.05,
                  seasonality=None, freq=None, return_diagnostics=False):
         """
         Обчислює метрики для оцінки якості моделей часових рядів.
