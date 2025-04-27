@@ -74,3 +74,39 @@ class RegressionMetric(MetricStrategy):
 
         return metrics
 
+    def get_metainformation(self):
+        """
+        Returns a dictionary with information about metrics optimization direction.
+        For each metric, indicates whether higher (True) or lower (False) values
+        are better.
+
+        :returns:
+        -----------
+        dict
+            Dictionary with metric names as keys and boolean values indicating
+            if higher values are better (True) or lower values are better (False).
+        """
+        metainformation = {
+            # Error metrics (lower is better)
+            'mse': False,
+            'rmse': False,
+            'mae': False,
+            'medae': False,
+            'max_error': False,
+            'mape': False,
+            'smape': False,
+            'mean_error': None,  # Ideally should be close to zero, not strictly minimized or maximized
+            'std_error': False,
+            'nmse': False,
+            'nrmse': False,
+            'rrse': False,
+            'theil_u2': False,
+
+            # Quality metrics (higher is better)
+            'r2': True,
+            'adjusted_r2': True,
+            'explained_variance': True
+        }
+
+        return metainformation
+
