@@ -80,6 +80,8 @@ class ModelsManager(QObject):
             model_dict = self._get_density_estimation_models()
         elif task == task_names.CLUSTERING:
             model_dict = self._get_clustering_models()
+        elif task == task_names.OWN_NN:
+            pass
         else:
             for module in self.modules[task]:
                 for name, cls in inspect.getmembers(module, inspect.isclass):
@@ -131,7 +133,6 @@ class ModelsManager(QObject):
         density_methods = {}
         for name, Estimator in estimators:
             try:
-                #if (hasattr(Estimator, "predict") and hasattr(Estimator, "fit")) or (hasattr(Estimator, "fit_predict")) :
                 if issubclass(Estimator, DensityMixin) and name != "DensityMixin":
                     density_methods[name] = Estimator
             except:

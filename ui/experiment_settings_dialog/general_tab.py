@@ -65,7 +65,7 @@ class GeneralTabWidget(QWidget):
         self.training_time = QLabel("")
         self.evaluate_button.setEnabled(False)
 
-        self.inherit_button = QPushButton("Inherit")
+        self.inherit_button = QPushButton("Успадкувати")
         self.training_time = QLabel("")
         self.inherit_button.setEnabled(False)
 

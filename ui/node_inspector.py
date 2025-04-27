@@ -15,7 +15,7 @@ class NodeInspector(QWidget):
         layout = QVBoxLayout(self)
 
         # Заголовок інспектора
-        label = QLabel("Nodes Inspector")
+        label = QLabel("Інспектор Експериментів")
         label.setStyleSheet("font-weight: bold; font-size: 14px;")
         layout.addWidget(label)
 

@@ -7,6 +7,7 @@ from project.ui.experiment_settings_dialog.input_data_tab import InputDataTabWid
 from project.ui.experiment_settings_dialog.metrics_tab import MetricsTabWidget
 
 
+
 class ExperimentSettingsWindow(QMainWindow):
     """Головне вікно налаштувань експерименту"""
     window_accepted = pyqtSignal()  # Signal to replace dialog.accept()
@@ -16,6 +17,7 @@ class ExperimentSettingsWindow(QMainWindow):
         super().__init__(parent)
         self.model_tab = None
         self.init_ui()
+
 
     def init_ui(self):
         """Ініціалізація інтерфейсу"""
@@ -38,10 +40,10 @@ class ExperimentSettingsWindow(QMainWindow):
         self.evaluation_tab = MetricsTabWidget()
 
         # Додаємо вкладки до віджета
-        self.tab_widget.addTab(self.general_tab, "General")
-        self.tab_widget.addTab(self.model_tab, "Params")
-        self.tab_widget.addTab(self.data_tab, "Data")
-        self.tab_widget.addTab(self.evaluation_tab, "Metrics")
+        self.tab_widget.addTab(self.general_tab, "Загальна інформація")
+        self.tab_widget.addTab(self.model_tab, "Гіперпараметри")
+        self.tab_widget.addTab(self.data_tab, "Вхідні дані")
+        self.tab_widget.addTab(self.evaluation_tab, "Оцінка")
 
         main_layout.addWidget(self.tab_widget)
         self.setCentralWidget(central_widget)

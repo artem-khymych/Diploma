@@ -19,7 +19,6 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
-# TODO show all parents metrics in metrics tab of children
 class Experiment(QObject):
     experiment_finished = pyqtSignal(float)
     experiment_evaluated = pyqtSignal(object, object)
@@ -168,6 +167,8 @@ class Experiment(QObject):
             # Специфічна обробка для часових рядів
             # Логіка залежить від конкретної реалізації та моделі
             pass
+        elif self.task == task_names.OWN_NN:
+            pass
 
         # Збереження часу навчання
         self.train_time = time.time() - start_time
@@ -179,6 +180,7 @@ class Experiment(QObject):
         self.is_finished = True
         self.experiment_finished.emit(self.train_time)
         return
+
 
     def evaluate(self):
         self.train_metrics, self.test_metrics = self._calculate_metrics()

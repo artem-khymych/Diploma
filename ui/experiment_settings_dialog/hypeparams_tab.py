@@ -4,7 +4,7 @@ from project.ui.parameter_editor_widget import ParameterEditorWidget
 
 
 class HyperparamsTabWidget(QWidget):
-    """Представлення для вкладки параметрів моделі (затичка)"""
+    """Представлення для вкладки параметрів моделі"""
 
     def __init__(self, parent=None):
         super().__init__(parent)

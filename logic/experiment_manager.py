@@ -5,9 +5,11 @@ from PyQt5.QtCore import pyqtSignal, QObject
 from sklearn.base import ClassifierMixin, RegressorMixin, is_regressor, is_classifier
 
 from .experiment.experiment import Experiment
-from .modules import models_manager
+from .experiment.nn_experiment import NeuralNetworkExperiment
+from .modules import models_manager, task_names
 from ..ui.experiment_settings_dialog.experiment_comparison_dialog import ExperimentComparisonDialog
 from ..ui.node import Node
+from tensorflow.keras import layers, Model
 
 
 class ExperimentManager(QObject):
@@ -23,7 +25,7 @@ class ExperimentManager(QObject):
         self.experiments = {}
         self.current_node = None
         self.current_model = None
-        self.current_params = None
+        self.current_params = {}
         self.current_task = None
 
     def get_node(self, node: Node):
@@ -40,6 +42,46 @@ class ExperimentManager(QObject):
         if self.current_node is not None and self.current_model is not None and self.current_params is not None and self.current_task is not None:
             self.create_new_experiment()
 
+    def create_nn_experiment(self, task):
+        self.current_params = {}
+        model_params = {
+            'optimizer': 'adam',  # Оптимізатор
+            'loss': 'sparse_categorical_crossentropy',  # Функція втрат
+            'metrics': ['accuracy'],  # Метрики
+            'initial_epoch': 0,  # Початковий етап
+            'trainable': True,  # Чи тренувати модель
+            'activation': 'relu',  # Функція активації
+        }
+
+        # Параметри методу fit():
+        fit_params = {
+            'batch_size': 32,  # Розмір пакету
+            'epochs': 10,  # Кількість етапів
+            'verbose': 1,  # Рівень виведення
+            'callbacks': [],  # Колбеки для додаткової функціональності
+            'validation_data': None,  # Дані для перевірки
+            'validation_split': 0.2,  # Частина для валідації
+            'shuffle': True,  # Перемішувати дані
+            'initial_epoch': 0,  # Початковий етап
+            'steps_per_epoch': None,  # Кроки на етап
+            'validation_steps': None,  # Кроки на валідації
+            'class_weight': {},  # Вага класів
+        }
+
+        self.current_params["model_params"] = model_params
+        self.current_params["fit_params"] = fit_params
+        experiment = NeuralNetworkExperiment(self.current_node.id, task, Model(), self.current_params)
+        self.experiments[self.current_node.id] = experiment
+        print(f"Created new experiment with ID: {self.current_node.id}")
+
+        # Скидаємо поточні дані після створення експериментуф ііііііііііііііііііііііііііііііі
+        self.current_node = None
+        self.current_model = None
+        self.current_params = None
+        self.current_task = None
+
+        return experiment
+
     def create_new_experiment(self):
         experiment = Experiment(self.current_node.id, self.current_task, self.current_model, self.current_params)
         self.experiments[self.current_node.id] = experiment
@@ -53,6 +95,7 @@ class ExperimentManager(QObject):
 
         return experiment
 
+    # TODO inherit of the nn experiment
     def inherit_experiment_from(self, parent_id, child_id):
         """Створює новий експеримент на основі батьківського, але без метрик оцінки"""
         if parent_id not in self.experiments:
@@ -62,13 +105,20 @@ class ExperimentManager(QObject):
         parent_experiment = self.experiments[parent_id]
 
         # Створюємо новий експеримент з тими ж параметрами, але іншим ID
-        child_experiment = Experiment(
+        """ child_experiment = Experiment(
             id=child_id,
             task=parent_experiment.task,
             model=parent_experiment.model,
             params=copy.deepcopy(parent_experiment._params),
             parent=parent_experiment
-        )
+        )"""
+
+        child_experiment = type(parent_experiment)(
+            id=child_id,
+            task=parent_experiment.task,
+            model=parent_experiment.model,
+            params=copy.deepcopy(parent_experiment._params),
+            parent=parent_experiment)
 
         # Копіюємо дані про дані та параметри, але не копіюємо метрики
         child_experiment.input_data_params = copy.deepcopy(parent_experiment.input_data_params)

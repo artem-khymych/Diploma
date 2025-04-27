@@ -1,4 +1,4 @@
-# TODO all the names as constants here
+
 CLASSIFICATION = "Classification"
 REGRESSION = "Regression"
 CLUSTERING = "Clustering"

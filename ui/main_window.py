@@ -17,7 +17,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Робоче вікно з можливістю змінювати розміри зон")
+        self.setWindowTitle("Програмне середовище тренування та тестування методів машинного навчання")
         self.setGeometry(100, 100, 800, 600)
 
         # Головний віджет (центральний)
@@ -65,7 +65,7 @@ class MainWindow(QMainWindow):
         """Ініціалізація інспектора вузлів."""
         self.inspector_frame = BasicWindow()
         # Заголовок інспектора
-        label = QLabel("Nodes Inspector")
+        label = QLabel("Інспектор Експериментів")
         label.setStyleSheet("font-weight: bold; font-size: 14px;")
         # Список вузлів
         nodes_list = QListWidget()
@@ -78,8 +78,8 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout(self.top_panel)
 
         # Додати кнопки
-        self.settings_button = QPushButton("Settings")
-        self.new_experiment_button = QPushButton("New experiment")
+        self.settings_button = QPushButton("Налаштування")
+        self.new_experiment_button = QPushButton("Створити експеримент")
         self.new_experiment_button.clicked.connect(self._add_new_experiment)
 
         layout.addWidget(self.settings_button)

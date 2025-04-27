@@ -11,10 +11,11 @@ class InputDataTabWidget(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        main_layout = QVBoxLayout()
+
+        self.main_layout = QVBoxLayout()
 
         self.create_data_mode_group()
-        main_layout.addWidget(self.data_mode_group)
+        self.main_layout.addWidget(self.data_mode_group)
 
         self.single_file_group = QGroupBox("Налаштування для одного файлу")
         single_file_layout = QVBoxLayout()
@@ -58,7 +59,7 @@ class InputDataTabWidget(QWidget):
         single_file_layout.addLayout(self.target_layout)
 
         self.single_file_group.setLayout(single_file_layout)
-        main_layout.addWidget(self.single_file_group)
+        self.main_layout.addWidget(self.single_file_group)
 
         self.multi_files_group = QGroupBox("Налаштування для декількох файлів")
         multi_files_layout = QVBoxLayout()
@@ -157,7 +158,7 @@ class InputDataTabWidget(QWidget):
         multi_files_layout.addWidget(self.y_test_group)
 
         self.multi_files_group.setLayout(multi_files_layout)
-        main_layout.addWidget(self.multi_files_group)
+        self.main_layout.addWidget(self.multi_files_group)
 
         self.split_group = QGroupBox("Параметри розбиття")
         split_layout = QVBoxLayout()
@@ -186,10 +187,10 @@ class InputDataTabWidget(QWidget):
         split_layout.addLayout(seed_layout)
 
         self.split_group.setLayout(split_layout)
-        main_layout.addWidget(self.split_group)
+        self.main_layout.addWidget(self.split_group)
 
 
-        self.setLayout(main_layout)
+        self.setLayout(self.main_layout)
 
         # Ініціалізація стану кодування
         self.single_manual_encoding_checkbox.setChecked(False)
@@ -226,11 +227,10 @@ class InputDataTabWidget(QWidget):
         self.categorical_encoding_group.setLayout(categorical_encoding_layout)
 
         # Додаємо групу до головного макету
-        main_layout.addWidget(self.categorical_encoding_group)
+        self.main_layout.addWidget(self.categorical_encoding_group)
 
-        main_layout.addStretch()
-
-        self.setLayout(main_layout)
+        self.main_layout.addStretch()
+        self.setLayout(self.main_layout)
 
         # Ініціалізація стану кодування
         self.single_manual_encoding_checkbox.setChecked(False)

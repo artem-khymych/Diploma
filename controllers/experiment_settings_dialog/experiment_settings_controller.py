@@ -6,8 +6,15 @@ from project.controllers.experiment_settings_dialog.general_tab_controller impor
 from project.controllers.experiment_settings_dialog.hyperparams_tab_controller import HyperparamsTabController
 from project.controllers.experiment_settings_dialog.input_data_tab_controller import InputDataTabController
 from project.controllers.experiment_settings_dialog.metrics_tab_controller import MetricsTabController
+from project.controllers.experiment_settings_dialog.neural_network_loader_tab_controller import \
+    NeuralNetworkLoaderTabController
 from project.logic.experiment.experiment import Experiment
+from project.logic.experiment.nn_experiment import NeuralNetworkExperiment
+
 from project.ui.experiment_settings_dialog.experiment_settings_dialog import ExperimentSettingsWindow
+
+from project.ui.experiment_settings_dialog.neural_network_load_tab import NeuralNetworkLoaderTabWidget
+from project.ui.experiment_settings_dialog.training_history_dialog import TrainingHistoryDialog
 
 
 class ExperimentSettingsController(QObject):
@@ -15,6 +22,7 @@ class ExperimentSettingsController(QObject):
     experiment_inherited = pyqtSignal(int)
     window_closed = pyqtSignal(bool, object)
 
+    # TODO do not change hyperparams tab but add mew tab for own nn
     def __init__(self, experiment: Experiment, window: ExperimentSettingsWindow):
         super().__init__()
         self.experiment = experiment
@@ -24,13 +32,25 @@ class ExperimentSettingsController(QObject):
 
         # Створення контролерів для вкладок
         self.general_controller = GeneralSettingsController(experiment, window.general_tab)
-        self.hyperparams_controller = HyperparamsTabController(experiment, window.model_tab)
-        self.input_data_controller = InputDataTabController(experiment, window.data_tab)
+        self.input_data_controller = InputDataTabController(self.experiment, self.window.data_tab)
         self.metrics_controller = MetricsTabController(experiment, window.evaluation_tab)
+        self.hyperparams_controller = HyperparamsTabController(self.experiment, self.window.model_tab)
 
-        # Підключення сигналів
-        #self.window.ok_btn.setAutoDefault(False)
+        self.prepare_nn_loader()
         self.connect_signals()
+
+    def prepare_nn_loader(self):
+        if isinstance(self.experiment, NeuralNetworkExperiment):
+            self.window.nn_loader_tab = NeuralNetworkLoaderTabWidget()
+            self.window.tab_widget.addTab(self.window.nn_loader_tab, "Завантажити модель")
+            self.nn_loader_controller = NeuralNetworkLoaderTabController(self.experiment, self.window.nn_loader_tab)
+            if self.experiment.parent:
+                self.nn_loader_controller = None
+                self.window.tab_widget.removeTab(4)
+
+        else:
+            self.nn_loader_controller = None
+        return
 
     def connect_signals(self):
         self.window.window_accepted.connect(self.on_accept)
@@ -43,6 +63,12 @@ class ExperimentSettingsController(QObject):
 
         # Підключаємо кнопку успадкування до методу обробника
         self.general_controller.experiment_inherited.connect(self.on_experiment_inherited)
+        if self.general_controller.history_button:
+            self.general_controller.history_button.clicked.connect(self.on_show_history)
+
+    def on_show_history(self):
+        dialog = TrainingHistoryDialog()
+        dialog.show_history(self.experiment.history)
 
     def on_experiment_inherited(self, parent_id):
         """Передає сигнал успадкування далі"""
@@ -50,6 +76,7 @@ class ExperimentSettingsController(QObject):
         self.experiment_inherited.emit(parent_id)
 
     def check_settings_and_run_experiment(self):
+        self.update_model_from_all_views()
         if self.check_settings():
             self.experiment.run()
         else:
@@ -66,6 +93,12 @@ class ExperimentSettingsController(QObject):
         self.window_closed.emit(True, self.input_params)
 
     def check_settings(self):
+        if isinstance(self.experiment, NeuralNetworkExperiment):
+            return self.check_nn_experiment_settings()
+        elif isinstance(self.experiment, Experiment):
+            return self.check_experiment_settings()
+
+    def _check_input_files(self):
         """Перевірка валідності всіх даних"""
         # Перевірка даних з вкладки "Дані"
         if self.input_data_controller.input_data_params.mode == 'single_file' and not self.input_data_controller.input_data_params.single_file_path:
@@ -89,16 +122,28 @@ class ExperimentSettingsController(QObject):
             self.window.tab_widget.setCurrentIndex(0)  # Перехід на вкладку "Загальні налаштування"
             return False
 
+        return True
+
+    def check_experiment_settings(self):
+        if not self._check_input_files():
+            return False
+
         try:
-            model = type(self.experiment.model)().set_params(**self.experiment.params)
+            if isinstance(self.experiment, Experiment):
+                model = type(self.experiment.model)().set_params(**self.experiment.params)
         except Exception as e:
             QMessageBox.warning(self.window, "Хибні параметри", f"Винила помилка у налаштованих параметрах:\n {e}")
             return False
-
         if self.validate_params_strict(model, self.experiment.params):
             return True
         else:
             return False
+
+    def check_nn_experiment_settings(self):
+        #TODO check model if it saved
+        if self._check_input_files():
+            return True
+
 
     def validate_params_strict(self, model_class, params):
         from sklearn.utils._param_validation import validate_parameter_constraints
@@ -120,6 +165,9 @@ class ExperimentSettingsController(QObject):
         self.general_controller.update_model_from_view()
         self.hyperparams_controller.update_model_from_view()
         self.input_data_controller.update_model_from_view()
+
+        if self.nn_loader_controller:
+            self.nn_loader_controller.update_model_from_view()
 
     def show(self):
         """Show the window and wait for the result"""
@@ -257,6 +305,3 @@ class ExperimentSettingsController(QObject):
 
 
 """
-
-
-

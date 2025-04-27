@@ -1,8 +1,9 @@
 from PyQt5.QtCore import QObject, pyqtSignal
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QPushButton
 import copy
 
 from project.logic.experiment.experiment import Experiment
+from project.logic.experiment.nn_experiment import NeuralNetworkExperiment
 from project.ui.experiment_settings_dialog.general_tab import GeneralTabWidget
 
 
@@ -29,6 +30,13 @@ class GeneralSettingsController(QObject):
 
         if hasattr(self.experiment, 'training_time') and self.experiment.is_finished:
             self.view.set_experiment_finished(self.experiment.training_time)
+
+        if isinstance(self.experiment, NeuralNetworkExperiment):
+            self.history_button = QPushButton("Переглянути історію")
+            self.view.button_layout.addWidget(self.history_button)
+            self.history_button.setVisible(False)
+        else:
+            self.history_button = None
 
     def update_model_from_view(self):
         """Оновлення моделі даними з представлення"""
@@ -57,6 +65,8 @@ class GeneralSettingsController(QObject):
         QMessageBox.information(self.view, "Успіх",
                                 "Модель успішно натренована.")
         self.view.set_experiment_finished(training_time)
+        if isinstance(self.experiment, NeuralNetworkExperiment):
+            self.history_button.setVisible(True)
 
     def on_experiment_inherited(self):
         """Обробник натискання кнопки успадкування експерименту"""

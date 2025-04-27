@@ -32,6 +32,9 @@ class MainController:
         # Підключаємо сигнал успадкування експерименту від контролера вузлів
         self.inspector_controller.node_controller.experiment_inherited.connect(self._handle_experiment_inheritance)
 
+        self.task_selector_controller.own_nn_selected.connect(self.experiment_manager.create_nn_experiment)
+
+
 
     def _show_experiment_settings_dialog(self, node_id):
         """Функція для відображення діалогу налаштувань експерименту"""
