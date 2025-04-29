@@ -30,13 +30,6 @@ class SimpleParameterEditor(QWidget):
 
         layout.addWidget(self.table)
 
-        # Кнопки управління
-        btn_layout = QHBoxLayout()
-        self.save_btn = QPushButton("Зберегти")
-        self.save_btn.clicked.connect(lambda: self.parameterChanged.emit(self.get_parameters()))
-        btn_layout.addWidget(self.save_btn)
-
-        layout.addLayout(btn_layout)
 
     def populate(self, params: dict):
         self.table.setRowCount(0)
@@ -113,6 +106,45 @@ class SimpleParameterEditor(QWidget):
 
             params[key] = value
         return params
+
+    def update_parameters(self, params: dict):
+        """
+        Оновлює поточні значення параметрів у таблиці без її повного перестворення.
+        Якщо параметр не існує в таблиці, він буде доданий.
+        Якщо у новому словнику параметрів відсутній ключ, який є в таблиці,
+        цей рядок буде збережено з попереднім значенням.
+        """
+        if not params:
+            return
+
+        # Створюємо словник поточних параметрів для швидкого доступу за ключем
+        current_params = {}
+        for row in range(self.table.rowCount()):
+            key_item = self.table.item(row, 0)
+            if key_item:
+                current_params[key_item.text()] = row
+
+        # Оновлюємо існуючі параметри та додаємо нові
+        for key, value in params.items():
+            if key in current_params:
+                # Параметр існує - оновлюємо значення
+                row = current_params[key]
+                self._set_value_widget(row, value)
+            else:
+                # Параметр новий - додаємо рядок
+                row = self.table.rowCount()
+                self.table.insertRow(row)
+
+                # Додаємо ключ
+                key_item = QTableWidgetItem(key)
+                key_item.setFlags(key_item.flags() & ~Qt.ItemIsEditable)
+                self.table.setItem(row, 0, key_item)
+
+                # Додаємо значення
+                self._set_value_widget(row, value)
+
+        # Після оновлення параметрів емітуємо сигнал про зміну
+        self.parameterChanged.emit(self.get_parameters())
 
     def _edit_collection(self, button: QPushButton):
         """Редагування списків/словників у простому редакторі"""
@@ -406,10 +438,6 @@ class ComplexParameterEditor(QWidget):
 
         layout.addWidget(self.tab_widget)
 
-        # Кнопка збереження
-        self.save_btn = QPushButton("Зберегти")
-        self.save_btn.clicked.connect(lambda: self.parameterChanged.emit(self.get_parameters()))
-        layout.addWidget(self.save_btn)
 
     def _create_table(self) -> QTableWidget:
         table = QTableWidget()
@@ -458,6 +486,62 @@ class ComplexParameterEditor(QWidget):
 
             # Значення параметра
             self._set_value_widget(table, row, key, value)
+
+    def update_parameters(self, params: dict):
+        """
+        Оновлює поточні значення параметрів у таблицях без їх повного перестворення.
+        """
+        # Оновлюємо основні параметри
+        main_params = {k: v for k, v in params.items()
+                       if k not in ["model_params", "fit_params", "task_spec_params"]}
+        if main_params:
+            self._update_table_params(self.main_table, main_params)
+
+        # Оновлюємо вкладені параметри
+        if "model_params" in params and params["model_params"]:
+            self._update_table_params(self.model_params_table, params["model_params"])
+            self.tab_widget.setTabVisible(0, True)
+
+        if "fit_params" in params and params["fit_params"]:
+            self._update_table_params(self.fit_params_table, params["fit_params"])
+            self.tab_widget.setTabVisible(1, True)
+
+        if "task_spec_params" in params and params["task_spec_params"]:
+            self._update_table_params(self.task_spec_params_table, params["task_spec_params"])
+            self.tab_widget.setTabVisible(2, True)
+
+        # Після оновлення параметрів емітуємо сигнал про зміну
+        self.parameterChanged.emit(self.get_parameters())
+
+    def _update_table_params(self, table: QTableWidget, params: dict):
+        """
+        Оновлює параметри у вказаній таблиці.
+        """
+        # Створюємо словник поточних параметрів для швидкого доступу за ключем
+        current_params = {}
+        for row in range(table.rowCount()):
+            key_item = table.item(row, 0)
+            if key_item:
+                current_params[key_item.text()] = row
+
+        # Оновлюємо існуючі параметри та додаємо нові
+        for key, value in params.items():
+            if key in current_params:
+                # Параметр існує - оновлюємо значення
+                row = current_params[key]
+                self._set_value_widget(table, row, key, value)
+            else:
+                # Параметр новий - додаємо рядок
+                row = table.rowCount()
+                table.insertRow(row)
+
+                # Додаємо ключ
+                key_item = QTableWidgetItem(key)
+                key_item.setFlags(key_item.flags() & ~Qt.ItemIsEditable)
+                table.setItem(row, 0, key_item)
+
+                # Додаємо значення
+                self._set_value_widget(table, row, key, value)
 
     def _set_value_widget(self, table: QTableWidget, row: int, key: str, value: Any):
         # Перевіряємо на None перед іншими перевірками
@@ -670,3 +754,23 @@ class ParameterEditorWidget(QWidget):
         current_editor = self.stack.currentWidget()
         params = current_editor.get_parameters()
         return params
+
+    def update_parameters(self, params: Union[dict, list]):
+        """
+        Оновлює поточні значення параметрів у відповідному редакторі.
+        """
+        if isinstance(params, list):
+            # Якщо це список - обробляємо як простий словник з індексами
+            params_dict = {str(i): v for i, v in enumerate(params)}
+            self.simple_editor.update_parameters(params_dict)
+            self.stack.setCurrentWidget(self.simple_editor)
+        elif any(k in params for k in ["model_params", "fit_params", "task_spec_params"]):
+            # Якщо є вкладені словники - використовуємо складний редактор
+            self.complex_editor.update_parameters(params)
+            self.stack.setCurrentWidget(self.complex_editor)
+        else:
+            # Інакше - простий редактор
+            self.simple_editor.update_parameters(params)
+            self.stack.setCurrentWidget(self.simple_editor)
+
+        return self.get_current_parameters()

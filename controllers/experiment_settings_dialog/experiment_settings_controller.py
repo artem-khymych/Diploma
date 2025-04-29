@@ -53,6 +53,7 @@ class ExperimentSettingsController(QObject):
         return
 
     def connect_signals(self):
+
         self.window.window_accepted.connect(self.on_accept)
         self.window.window_rejected.connect(self.on_cancel)
         self.general_controller.view.experiment_started.connect(self.check_settings_and_run_experiment)
@@ -65,6 +66,9 @@ class ExperimentSettingsController(QObject):
         self.general_controller.experiment_inherited.connect(self.on_experiment_inherited)
         if self.general_controller.history_button:
             self.general_controller.history_button.clicked.connect(self.on_show_history)
+        self.hyperparams_controller.get_input_data_for_tuning.connect(self.update_model_from_all_views)
+
+
 
     def on_show_history(self):
         dialog = TrainingHistoryDialog()

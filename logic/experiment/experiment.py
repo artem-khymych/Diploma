@@ -425,3 +425,10 @@ class Experiment(QObject):
             test_metrics = {"error": "Неможливо обчислити метрики для тестового набору"}
 
         return train_metrics, test_metrics
+
+    def get_params_for_tune(self):
+        if self.input_data_params.single_file_path or (self.input_data_params.x_train_file_path and self.input_data_params.y_train_file_path):
+            self._load_data()
+            return self.X_train, self.y_train
+        else:
+            return None, None

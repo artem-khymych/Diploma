@@ -17,4 +17,8 @@ class HyperparamsTabWidget(QWidget):
         self.params_widget = ParameterEditorWidget()
         self.params_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(self.params_widget)
+
+        self.tune_params = QPushButton("Підібрати параметри")
+        layout.addWidget(self.tune_params)
+
         self.setLayout(layout)
