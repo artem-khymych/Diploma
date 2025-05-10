@@ -11,10 +11,10 @@ class NNModelType(Enum):
 class TaskType(Enum):
     CLASSIFICATION = "Classification"
     REGRESSION = "Regression"
-    CLUSTERING = "Clustering"
-    DIMENSIONALITY_REDUCTION = "Dimensionality Reduction"
-    ANOMALY_DETECTION = "Anomaly Detection"
-    DENSITY_ESTIMATION = "Density Estimation"
+    #CLUSTERING = "Clustering"
+    #DIMENSIONALITY_REDUCTION = "Dimensionality Reduction"
+    #ANOMALY_DETECTION = "Anomaly Detection"
+    #DENSITY_ESTIMATION = "Density Estimation"
     TIME_SERIES_FORECASTING = "Time Series Forecasting"
 
 
@@ -69,7 +69,7 @@ class ModelTaskRegistry:
             )
         )
 
-        self.register_task(
+        """self.register_task(
             NNModelType.GENERIC,
             TaskConfig(
                 TaskType.CLUSTERING,
@@ -103,7 +103,7 @@ class ModelTaskRegistry:
                 DensityEstimationMetric,
                 "Метрики для оцінки щільності розподілу"
             )
-        )
+        )"""
 
         self.register_task(
             NNModelType.GENERIC,
@@ -187,10 +187,10 @@ def get_nn_metric(model_type_str: str, task_type_str: str):
     task_type_map = {
         "CLASSIFICATION": TaskType.CLASSIFICATION,
         "REGRESSION": TaskType.REGRESSION,
-        "CLUSTERING": TaskType.CLUSTERING,
-        "DIMENSIONALITY_REDUCTION": TaskType.DIMENSIONALITY_REDUCTION,
-        "ANOMALY_DETECTION": TaskType.ANOMALY_DETECTION,
-        "DENSITY_ESTIMATION": TaskType.DENSITY_ESTIMATION,
+        #"CLUSTERING": TaskType.CLUSTERING,
+        #"DIMENSIONALITY_REDUCTION": TaskType.DIMENSIONALITY_REDUCTION,
+        #"ANOMALY_DETECTION": TaskType.ANOMALY_DETECTION,
+        #"DENSITY_ESTIMATION": TaskType.DENSITY_ESTIMATION,
         "TIME_SERIES_FORECASTING": TaskType.TIME_SERIES_FORECASTING
     }
 

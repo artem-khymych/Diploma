@@ -141,3 +141,4 @@ class ModelsManager(QObject):
 
     def get_model_params(self, model):
         model.get_params()
+

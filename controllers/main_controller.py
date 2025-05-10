@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QMainWindow, QDialog
 from project.controllers.experiment_settings_dialog.experiment_settings_controller import ExperimentSettingsController
 from project.controllers.inspector_controller import InspectorController
 from project.controllers.task_selector_controller import TaskSelectorController
+from project.controllers.workspace_manager import WorkspaceManager
 from project.logic.experiment_manager import ExperimentManager
 from project.logic.modules.models_manager import ModelsManager
 from project.ui.experiment_settings_dialog.experiment_settings_dialog import ExperimentSettingsWindow
@@ -11,6 +12,7 @@ from project.ui.main_window import MainWindow
 
 class MainController:
     def __init__(self):
+        self.workspace_manager = WorkspaceManager()
         self.view = MainWindow()
         self.models_manager = ModelsManager()
         self.inspector_controller = InspectorController(self.view.inspector_frame,
@@ -18,6 +20,11 @@ class MainController:
                                                         self.view.graphics_view)
         self.task_selector_controller = TaskSelectorController(self.view)
         self.experiment_manager = ExperimentManager()
+
+        self.workspace_manager.set_experiment_manager(self.experiment_manager)
+        self.workspace_manager.set_node_controller(self.inspector_controller.node_controller)
+        self.workspace_manager.set_work_area(self.view.graphics_view) # Передаємо робочу область
+
         self.connect_signals()
 
     def connect_signals(self):
@@ -35,6 +42,13 @@ class MainController:
         self.task_selector_controller.own_nn_selected.connect(self.experiment_manager.create_nn_experiment)
 
 
+        self.view.fit_action.triggered.connect(self.workspace_manager.fit_view_to_content)
+        self.view.save_as_action.triggered.connect(lambda: self.workspace_manager.save_project_as(self.view))
+        self.view.save_action.triggered.connect(lambda: self.workspace_manager.save_project(self.view))
+        self.view.open_action.triggered.connect(lambda: self.workspace_manager.open_project(self.view))
+        self.view.new_action.triggered.connect(self.workspace_manager.new_project)
+
+
 
     def _show_experiment_settings_dialog(self, node_id):
         """Функція для відображення діалогу налаштувань експерименту"""
@@ -46,6 +60,7 @@ class MainController:
         self.experiment_settings_controller.experiment_inherited.connect(self._handle_experiment_inheritance)
         self.experiment_settings_controller.metrics_controller.compare_experiments.connect(self.experiment_manager.show_comparison_dialog)
         self.experiment_settings_controller.show()
+        self.experiment_settings_controller.window.general_tab.save_button.clicked.connect(lambda: self.experiment_manager.save_model(experiment, self.view))
 
     def _handle_experiment_inheritance(self, parent_id):
         """Обробник сигналу успадкування експерименту"""

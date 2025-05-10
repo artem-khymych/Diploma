@@ -208,3 +208,4 @@ class NeuralNetworkLoaderTabController(TabController):
         self.experiment.weights_file_path = self.weights_path
         task = TaskType(self.view.model_task_combo.currentText())
         self.experiment.task = task
+        #self.experiment.input_data_params.current_task = task

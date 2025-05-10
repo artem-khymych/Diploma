@@ -1,7 +1,11 @@
 import inspect
 import copy
+import os
+import pickle
+from typing import Optional, Tuple
 
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import pyqtSignal, QObject, Qt
+from PyQt5.QtWidgets import QMessageBox, QFileDialog, QPushButton, QLabel, QMainWindow, QWidget, QVBoxLayout, QComboBox
 from sklearn.base import ClassifierMixin, RegressorMixin, is_regressor, is_classifier
 
 from .experiment.experiment import Experiment
@@ -46,6 +50,7 @@ class ExperimentManager(QObject):
         self.current_params = {}
         model_params = {
             'optimizer': 'adam',  # Оптимізатор
+            'learning_rate': 0.001,
             'loss': 'sparse_categorical_crossentropy',  # Функція втрат
             'metrics': ['accuracy'],  # Метрики
             'initial_epoch': 0,  # Початковий етап
@@ -57,14 +62,10 @@ class ExperimentManager(QObject):
         fit_params = {
             'batch_size': 32,  # Розмір пакету
             'epochs': 10,  # Кількість етапів
-            'verbose': 1,  # Рівень виведення
             'callbacks': [],  # Колбеки для додаткової функціональності
-            'validation_data': None,  # Дані для перевірки
             'validation_split': 0.2,  # Частина для валідації
             'shuffle': True,  # Перемішувати дані
             'initial_epoch': 0,  # Початковий етап
-            'steps_per_epoch': None,  # Кроки на етап
-            'validation_steps': None,  # Кроки на валідації
             'class_weight': {},  # Вага класів
         }
 
@@ -202,3 +203,260 @@ class ExperimentManager(QObject):
         # Створюємо діалогове вікно
         dialog = ExperimentComparisonDialog(related_experiments)
         dialog.exec_()
+
+    def _save_ml_model(self, model, parent_widget):
+        """
+        Функція для збереження моделі scikit-learn через графічний інтерфейс PyQt5.
+
+        Параметри:
+        ----------
+        model : об'єкт scikit-learn
+            Модель машинного навчання, яку потрібно зберегти.
+        parent_widget : QWidget, опціонально
+            Батьківський віджет для діалогового вікна. Якщо None, буде створено нове вікно.
+
+        Повертає:
+        ---------
+        str або None
+            Шлях до збереженого файлу або None, якщо збереження скасовано.
+        """
+        # Створюємо основний застосунок, якщо він не існує
+        # Запускаємо діалогове вікно вибору файлу
+        file_path, _ = QFileDialog.getSaveFileName(
+            parent_widget,
+            "Зберегти модель",
+            "",
+            "Pickle Files (*.pkl);;All Files (*)"
+        )
+
+        # Якщо шлях вибрано, зберігаємо модель
+        if file_path:
+            try:
+                # Додаємо розширення .pkl, якщо воно відсутнє
+                if not file_path.endswith('.pkl'):
+                    file_path += '.pkl'
+
+                # Зберігаємо модель
+                with open(file_path, 'wb') as f:
+                    pickle.dump(model, f)
+
+                # Показуємо повідомлення про успішне збереження
+                QMessageBox.information(
+                    parent_widget,
+                    "Успіх",
+                    f"Модель успішно збережено у файл:\n{file_path}"
+                )
+
+                return file_path
+            except Exception as e:
+                # Показуємо повідомлення про помилку
+                QMessageBox.critical(
+                    parent_widget,
+                    "Помилка",
+                    f"Не вдалося зберегти модель. Помилка:\n{str(e)}"
+                )
+                return None
+        else:
+            return None
+
+    def _save_nn_model(self, experiment, parent_widget):
+
+        """
+        Функція для збереження моделі нейронної мережі через графічний інтерфейс PyQt5.
+
+        Параметри:
+        ----------
+        experiment : NeuralNetworkExperiment
+            Експеримент з нейронною мережею, яку потрібно зберегти
+        parent_widget : QWidget, опціонально
+            Батьківський віджет для діалогового вікна. Якщо None, буде створено нове вікно.
+
+        Повертає:
+        ---------
+        Tuple[str, str] або None
+            Кортеж шляхів до збереженої моделі та ваг, або None, якщо збереження скасовано.
+        """
+
+        def save_keras_h5(model, parent_widget, experiment) -> Optional[Tuple[str, str]]:
+            """Зберігає модель у форматі Keras H5"""
+            # Визначаємо запропонований шлях для збереження
+            default_path = ""
+            if experiment.model_file_path and experiment.model_file_path.endswith('.h5'):
+                default_path = experiment.model_file_path
+
+            # Запускаємо діалог вибору файлу
+            file_path, _ = QFileDialog.getSaveFileName(
+                parent_widget,
+                "Зберегти модель Keras",
+                default_path,
+                "Keras Model (*.h5)"
+            )
+
+            if not file_path:
+                return None
+
+            # Додаємо розширення .h5, якщо воно відсутнє
+            if not file_path.endswith('.h5'):
+                file_path += '.h5'
+
+            # Зберігаємо модель
+            model.save(file_path)
+            return file_path, ""  # Другий елемент порожній, оскільки ваги включені в h5
+
+        def save_tf_savedmodel(model, parent_widget, experiment) -> Optional[Tuple[str, str]]:
+            """Зберігає модель у форматі TensorFlow SavedModel"""
+            # Визначаємо запропоновану директорію для збереження
+            default_dir = ""
+            if experiment.model_file_path:
+                default_dir = os.path.dirname(experiment.model_file_path)
+
+            # Запускаємо діалог вибору директорії
+            dir_path = QFileDialog.getExistingDirectory(
+                parent_widget,
+                "Виберіть директорію для збереження моделі TensorFlow",
+                default_dir
+            )
+
+            if not dir_path:
+                return None
+
+            # Зберігаємо модель
+            model.save(dir_path, save_format='tf')
+            return dir_path, ""  # Другий елемент порожній, оскільки ваги включені в SavedModel
+
+        def save_json_weights(model, parent_widget, experiment) -> Optional[Tuple[str, str]]:
+            """Зберігає модель у форматі JSON + Weights"""
+            # Визначаємо запропоновану базову назву файлу
+            default_name = ""
+            if experiment.model_file_path:
+                default_dir = os.path.dirname(experiment.model_file_path)
+                default_name = os.path.splitext(os.path.basename(experiment.model_file_path))[0]
+            else:
+                default_dir = ""
+
+            # Запускаємо діалог вибору файлу для JSON
+            json_path, _ = QFileDialog.getSaveFileName(
+                parent_widget,
+                "Зберегти структуру моделі (JSON)",
+                os.path.join(default_dir, default_name) if default_name else "",
+                "JSON Files (*.json)"
+            )
+
+            if not json_path:
+                return None
+
+            # Додаємо розширення .json, якщо воно відсутнє
+            if not json_path.endswith('.json'):
+                json_path += '.json'
+
+            # Визначаємо шлях для ваг на основі шляху JSON
+            base_path = os.path.splitext(json_path)[0]
+            weights_path = base_path + ".weights.h5"
+
+            # Зберігаємо модель та ваги
+            json_config = model.to_json()
+            with open(json_path, 'w') as json_file:
+                json_file.write(json_config)
+
+            model.save_weights(weights_path)
+
+            return json_path, weights_path
+
+        def perform_save(save_format):
+            """Виконує збереження моделі у вибраному форматі"""
+            try:
+                model = experiment.model
+                result = None
+
+                # В залежності від формату, викликаємо відповідну функцію збереження
+                if save_format == "Keras (.h5)":
+                    result = save_keras_h5(model, parent_widget, experiment)
+                elif save_format == "TensorFlow SavedModel":
+                    result = save_tf_savedmodel(model, parent_widget, experiment)
+                elif save_format == "JSON + Weights":
+                    result = save_json_weights(model, parent_widget, experiment)
+
+                # Якщо збереження успішне, оновлюємо шляхи в експерименті
+                if result:
+                    model_path, weights_path = result
+                    experiment.model_file_path = model_path
+                    if weights_path:
+                        experiment.weights_file_path = weights_path
+                    experiment.load_type = save_format
+
+                    # Показуємо повідомлення про успіх
+                    QMessageBox.information(
+                        parent_widget,
+                        "Успіх",
+                        f"Модель успішно збережено у форматі {save_format}"
+                    )
+
+                # Закриваємо вікно, якщо воно було створено нами
+                if save_window:
+                    save_window.close()
+
+                return result
+            except Exception as e:
+                # Показуємо повідомлення про помилку
+                QMessageBox.critical(
+                    parent_widget,
+                    "Помилка",
+                    f"Не вдалося зберегти модель. Помилка:\n{str(e)}"
+                )
+                return None
+
+        save_window = None
+        if parent_widget is None:
+            save_window = QMainWindow()
+            save_window.setWindowTitle("Збереження моделі нейронної мережі")
+            save_window.resize(500, 300)
+
+            # Створюємо центральний віджет і макет
+            central_widget = QWidget()
+            save_window.setCentralWidget(central_widget)
+            layout = QVBoxLayout(central_widget)
+
+            # Додаємо мітку з інформацією
+            info_label = QLabel("Виберіть формат і місце збереження моделі нейронної мережі")
+            info_label.setAlignment(Qt.AlignCenter)
+            layout.addWidget(info_label)
+
+            # Додаємо випадаючий список для вибору формату
+            format_label = QLabel("Формат збереження:")
+            layout.addWidget(format_label)
+
+            format_combo = QComboBox()
+            format_combo.addItems(["Keras (.h5)", "TensorFlow SavedModel", "JSON + Weights"])
+            # Встановлюємо поточний формат, якщо він відомий
+            if experiment.load_type and experiment.load_type in ["Keras (.h5)", "TensorFlow SavedModel",
+                                                                 "JSON + Weights"]:
+                format_combo.setCurrentText(experiment.load_type)
+            layout.addWidget(format_combo)
+
+            # Додаємо кнопку
+            save_button = QPushButton("Зберегти модель")
+            layout.addWidget(save_button)
+
+            # Показуємо вікно
+            save_window.show()
+            parent_widget = save_window
+
+            # Функція для збереження при натисканні кнопки
+            def on_save_button_clicked():
+                save_format = format_combo.currentText()
+                perform_save(save_format)
+
+            save_button.clicked.connect(on_save_button_clicked)
+
+        else:
+            # Якщо parent_widget був переданий, запускаємо діалог вибору формату
+            formats = ["Keras (.h5)", "TensorFlow SavedModel", "JSON + Weights"]
+            selected_format = experiment.load_type if experiment.load_type in formats else formats[0]
+
+            perform_save(selected_format)
+
+    def save_model(self, experiment, parent_widget=None):
+        if isinstance(experiment, NeuralNetworkExperiment):
+            self._save_nn_model(experiment, parent_widget)
+        else:
+            self._save_ml_model(experiment.model, parent_widget)

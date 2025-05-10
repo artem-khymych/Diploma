@@ -38,7 +38,6 @@ class NeuralNetworkExperiment(Experiment):
         self.input_data_params: NeuralNetInputDataParams = NeuralNetInputDataParams()
 
         # Реєстр завдань моделей
-        #self.task_registry = ModelTaskRegistry()
         self.metric_factory = NNMetricFactory()
 
         # Для зберігання інформації про дані
@@ -68,6 +67,21 @@ class NeuralNetworkExperiment(Experiment):
         except Exception as e:
             raise ValueError(f"Помилка при завантаженні моделі: {str(e)}")
 
+    def get_params_for_tune(self):
+        self._load_data()
+
+        self._validate_data()
+        try:
+            self.X_train = self._convert_to_tensorflow_compatible(self.X_train)
+            self.X_test = self._convert_to_tensorflow_compatible(self.X_test)
+            if self.y_train is not None:
+                self.y_train = self._convert_to_tensorflow_compatible(self.y_train)
+            if self.y_test is not None:
+                self.y_test = self._convert_to_tensorflow_compatible(self.y_test)
+        except Exception as e:
+            raise ValueError(f"Помилка при перетворенні даних в формат TensorFlow: {str(e)}")
+
+        return self.X_train, self.y_train
     def run(self) -> None:
         """
         Запуск експерименту з нейронною мережею.
@@ -101,10 +115,7 @@ class NeuralNetworkExperiment(Experiment):
             self._compile_model(model)
 
         # Навчання моделі (якщо потрібно)
-        if self.X_train is not None and self.task not in [
-            TaskType.DIMENSIONALITY_REDUCTION,
-            TaskType.ANOMALY_DETECTION
-        ]:
+        if self.X_train is not None:
             try:
                 self.history = self._train_model(model)
             except Exception as e:
@@ -136,7 +147,7 @@ class NeuralNetworkExperiment(Experiment):
         elif self.task == TaskType.TIME_SERIES_FORECASTING:
             # Для часових рядів потрібна спеціальна обробка
             self._process_time_series_predictions(model)
-        elif self.task == TaskType.DIMENSIONALITY_REDUCTION:
+        """elif self.task == TaskType.DIMENSIONALITY_REDUCTION:
             # Для зниження розмірності
             self.transformed_train = model.predict(self.X_train)
             self.transformed_test = model.predict(self.X_test)
@@ -149,7 +160,7 @@ class NeuralNetworkExperiment(Experiment):
             self.test_predictions = self._convert_probabilities_to_classes(test_probabilities)
 
             self.train_actual = self.y_train
-            self.test_actual = self.y_test
+            self.test_actual = self.y_test"""
 
         # Збереження навченої моделі
         self.trained_model = model
@@ -401,9 +412,39 @@ class NeuralNetworkExperiment(Experiment):
         # Оновлення з параметрів моделі в self._params
         if 'model_params' in self._params:
             model_params = self._params.get('model_params', {})
-            for key in ['optimizer', 'loss', 'metrics']:
+            for key in ['loss', 'metrics']:
                 if key in model_params and model_params[key] is not None:
                     compile_params[key] = model_params[key]
+
+            # Обробка оптимізатора з урахуванням learning_rate
+            if 'optimizer' in model_params and model_params['optimizer'] is not None:
+                optimizer_name = model_params['optimizer']
+                learning_rate = model_params.get('learning_rate')
+
+                # Створення об'єкта оптимізатора з вказаним learning_rate
+                if learning_rate is not None:
+                    if optimizer_name == 'adam':
+                        compile_params['optimizer'] = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+                    elif optimizer_name == 'sgd':
+                        compile_params['optimizer'] = tf.keras.optimizers.SGD(learning_rate=learning_rate)
+                    elif optimizer_name == 'rmsprop':
+                        compile_params['optimizer'] = tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
+                    elif optimizer_name == 'adagrad':
+                        compile_params['optimizer'] = tf.keras.optimizers.Adagrad(learning_rate=learning_rate)
+                    elif optimizer_name == 'adadelta':
+                        compile_params['optimizer'] = tf.keras.optimizers.Adadelta(learning_rate=learning_rate)
+                    elif optimizer_name == 'adamax':
+                        compile_params['optimizer'] = tf.keras.optimizers.Adamax(learning_rate=learning_rate)
+                    elif optimizer_name == 'nadam':
+                        compile_params['optimizer'] = tf.keras.optimizers.Nadam(learning_rate=learning_rate)
+                    else:
+                        # Якщо назва оптимізатора не розпізнана, використовуємо просту рядкову назву
+                        compile_params['optimizer'] = optimizer_name
+                        print(
+                            f"Попередження: Нерозпізнаний оптимізатор '{optimizer_name}'. Learning rate буде проігноровано.")
+                else:
+                    # Якщо learning_rate не вказано, використовуємо просто назву оптимізатора
+                    compile_params['optimizer'] = optimizer_name
 
         # Компіляція моделі
         try:
@@ -541,15 +582,14 @@ class NeuralNetworkExperiment(Experiment):
                 # Для класифікації, регресії та прогнозування - використовуємо actual та predictions
                 train_input = (self.train_actual, self.train_predictions)
                 test_input = (self.test_actual, self.test_predictions)
-
-            elif self.task == TaskType.ANOMALY_DETECTION:
-                # Для аномалій - використовуємо вхідні дані та predictions
-                train_input = (self.X_train, self.train_predictions)
-                test_input = (self.X_test, self.test_predictions)
-            elif self.task == TaskType.DIMENSIONALITY_REDUCTION:
-                # Для зниження розмірності - оригінальні та трансформовані дані
-                train_input = (self.X_train, self.transformed_train)
-                test_input = (self.X_test, self.transformed_test)
+                """elif self.task == TaskType.ANOMALY_DETECTION:
+                    # Для аномалій - використовуємо вхідні дані та predictions
+                    train_input = (self.X_train, self.train_predictions)
+                    test_input = (self.X_test, self.test_predictions)
+                elif self.task == TaskType.DIMENSIONALITY_REDUCTION:
+                    # Для зниження розмірності - оригінальні та трансформовані дані
+                    train_input = (self.X_train, self.transformed_train)
+                    test_input = (self.X_test, self.transformed_test)"""
             else:
                 # Універсальний підхід для інших задач
                 train_input = (self.X_train, self.train_predictions) if hasattr(self, 'train_predictions') else None
@@ -687,3 +727,4 @@ class NeuralNetworkExperiment(Experiment):
         except Exception as e:
             raise ValueError(
                 f"Помилка при перетворенні в тензор TensorFlow: {str(e)}\nТип даних: {data.dtype}, Форма: {data.shape}")
+

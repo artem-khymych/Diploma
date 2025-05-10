@@ -67,6 +67,9 @@ class ExperimentSettingsController(QObject):
         if self.general_controller.history_button:
             self.general_controller.history_button.clicked.connect(self.on_show_history)
         self.hyperparams_controller.get_input_data_for_tuning.connect(self.update_model_from_all_views)
+        if self.nn_loader_controller:
+            self.nn_loader_controller.update_model.connect(self.update_model_from_all_views)
+
 
 
 
@@ -166,12 +169,14 @@ class ExperimentSettingsController(QObject):
 
     def update_model_from_all_views(self):
         """Оновлення моделі даними з усіх представлень"""
-        self.general_controller.update_model_from_view()
-        self.hyperparams_controller.update_model_from_view()
-        self.input_data_controller.update_model_from_view()
+
 
         if self.nn_loader_controller:
             self.nn_loader_controller.update_model_from_view()
+
+        self.general_controller.update_model_from_view()
+        self.hyperparams_controller.update_model_from_view()
+        self.input_data_controller.update_model_from_view()
 
     def show(self):
         """Show the window and wait for the result"""

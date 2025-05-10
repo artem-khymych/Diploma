@@ -67,6 +67,7 @@ class GeneralSettingsController(QObject):
         self.view.set_experiment_finished(training_time)
         if isinstance(self.experiment, NeuralNetworkExperiment):
             self.history_button.setVisible(True)
+        self.view.save_button.setEnabled(True)
 
     def on_experiment_inherited(self):
         """Обробник натискання кнопки успадкування експерименту"""

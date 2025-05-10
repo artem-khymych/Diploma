@@ -77,12 +77,10 @@ class MainWindow(QMainWindow):
         """Ініціалізація верхньої панелі з кнопками."""
         layout = QHBoxLayout(self.top_panel)
 
-        # Додати кнопки
-        self.settings_button = QPushButton("Налаштування")
+        self._setup_menu()
         self.new_experiment_button = QPushButton("Створити експеримент")
         self.new_experiment_button.clicked.connect(self._add_new_experiment)
 
-        layout.addWidget(self.settings_button)
         layout.addWidget(self.new_experiment_button)
         # Розтягнути панель
         layout.addStretch()
@@ -107,6 +105,34 @@ class MainWindow(QMainWindow):
         self.central_area.setLayout(QVBoxLayout())
         self.central_area.layout().addWidget(self.scroll_area)
         self.central_area.setStyleSheet("background-color: white;")
+
+    def _setup_menu(self):
+        """Налаштування головного меню програми."""
+        menu_bar = self.menuBar()
+
+        # Меню Файл
+        file_menu = menu_bar.addMenu("Файл")
+
+        # Дія "Новий проект"
+        self.new_action = file_menu.addAction("Новий проект")
+        self.new_action.setShortcut("Ctrl+N")
+
+        # Дія "Відкрити проект"
+        self.open_action = file_menu.addAction("Відкрити проект")
+        self.open_action.setShortcut("Ctrl+O")
+
+        # Дія "Зберегти проект"
+        self.save_action = file_menu.addAction("Зберегти проект")
+        self.save_action.setShortcut("Ctrl+S")
+
+        # Дія "Зберегти проект як..."
+        self.save_as_action = file_menu.addAction("Зберегти проект як...")
+        self.save_as_action.setShortcut("Ctrl+Shift+S")
+
+        # Підгонка виду до вмісту
+        view_menu = menu_bar.addMenu("Вигляд")
+        self.fit_action = view_menu.addAction("Підігнати до вмісту")
+        self.fit_action.setShortcut("F")
 
 
 if __name__ == "__main__":

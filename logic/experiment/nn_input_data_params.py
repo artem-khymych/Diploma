@@ -1,7 +1,7 @@
 from typing import Dict, Any
 
 from project.logic.experiment.input_data_params import InputDataParams
-from project.logic.modules.nn_model_types import NNModelType
+from project.logic.modules.nn_model_types import NNModelType, TaskType
 
 
 class NeuralNetInputDataParams(InputDataParams):

@@ -27,17 +27,20 @@ class HyperparamsTabController(TabController):
 
     def _tune_params_start(self):
         self.get_input_data_for_tuning.emit()
-        model = self.experiment.model
-        params = self.experiment.params
+
         X_train, y_train = self.experiment.get_params_for_tune()
 
         if not isinstance(X_train, type(None)):
             if isinstance(self.experiment, NeuralNetworkExperiment):
+                self.experiment.load_model_from_file()
+                model = self.experiment.model
                 compile_params, fit_params = show_nn_tuning_dialog(model, X_train, y_train)
                 self.experiment.params["model_params"] = compile_params
                 self.experiment.params["fit_params"] = fit_params
                 self.view.params_widget.update_parameters(self.experiment.params)
             else:
+                model = self.experiment.model
+                params = self.experiment.params
                 best_params = show_param_tuning_dialog(model, params, X_train, y_train)
                 self.experiment.params = best_params
                 self.view.params_widget.update_parameters(best_params)

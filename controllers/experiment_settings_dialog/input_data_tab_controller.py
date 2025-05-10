@@ -329,6 +329,7 @@ class InputDataTabController(TabController):
         return separator
 
     def update_model_from_view(self):
+        #self.init_view()
         self.input_data_params.mode = 'single_file' if self.view.single_file_radio.isChecked() else 'multi_files'
 
         # Одинарний файл

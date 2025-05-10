@@ -69,6 +69,9 @@ class GeneralTabWidget(QWidget):
         self.training_time = QLabel("")
         self.inherit_button.setEnabled(False)
 
+        self.save_button = QPushButton("Зберегти модель")
+        self.save_button.setEnabled(False)
+
         # Додаємо зелений трикутник як піктограму
         self.start_button.setIcon(QIcon.fromTheme("media-playback-start"))  # Стандартна іконка відтворення
 
@@ -79,6 +82,7 @@ class GeneralTabWidget(QWidget):
         self.button_layout.addWidget(self.evaluate_button)
         self.button_layout.addWidget(self.training_time)
         self.button_layout.addWidget(self.inherit_button)
+        self.button_layout.addWidget(self.save_button)
 
         self.button_layout.addStretch()
         layout.addLayout(self.button_layout)
