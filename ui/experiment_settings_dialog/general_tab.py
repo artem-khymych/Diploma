@@ -39,6 +39,7 @@ class GeneralTabWidget(QWidget):
         # Опис експерименту
         layout.addWidget(QLabel("Опис експерименту:"))
         self.description = QTextEdit()
+
         layout.addWidget(self.description)
 
         # Статус експерименту

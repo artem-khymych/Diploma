@@ -45,6 +45,9 @@ class GeneralSettingsController(QObject):
         if self.experiment.is_finished:
             self.view.start_button.setText("Перезапустити")
 
+    def set_experiment_description(self):
+        self.experiment.description = self.view.description.toPlainText()
+
     def set_experiment_name(self, name: str):
         self.view.experiment_name.setText(name)
 
@@ -52,10 +55,9 @@ class GeneralSettingsController(QObject):
         """Підключення обробників сигналів"""
         self.view.evaluate_clicked.connect(self.experiment.evaluate)
         self.experiment.experiment_finished.connect(self.on_experiment_finished)
-
+        self.view.description.textChanged.connect(self.set_experiment_description)
         # Підключаємо кнопку успадкування до відповідного метода
         self.view.inherit_button.clicked.connect(self.on_experiment_inherited)
-
 
     def on_experiment_finished(self, training_time):
         """Обробник завершення експерименту"""
