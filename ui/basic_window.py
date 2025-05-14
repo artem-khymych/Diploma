@@ -21,13 +21,5 @@ class BasicWindow(QFrame):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
 
-        self.changeSize = QPushButton()
-        self.changeSize.setIcon(self.style().standardIcon(QApplication.style().SP_ArrowLeft))
-        self.changeSize.setFixedWidth(self.MINIMUM_SIZE)
-
-        self.layout.addWidget(self.changeSize)
-
-        self.changeSize.clicked.connect(self.changeSizeRequested.emit)
-
 
 

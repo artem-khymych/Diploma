@@ -121,3 +121,133 @@ class GeneralTabWidget(QWidget):
             self.status_value.setText("Не запущено")
             self.start_button.setEnabled(True)
 
+    def apply_style(self):
+        """Застосування стилів для наукового-практичного додатку"""
+        # Загальний стиль для віджета
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #F5F7FA;
+                color: #2C3E50;
+                font-family: 'Segoe UI', 'Arial', sans-serif;
+            }
+            QLabel {
+                font-size: 11pt;
+                font-weight: 500;
+                padding: 2px;
+            }
+            QLineEdit, QTextEdit {
+                border: 1px solid #BDC3C7;
+                border-radius: 3px;
+                padding: 5px;
+                background-color: white;
+                selection-background-color: #3498DB;
+            }
+            QTextEdit {
+                font-size: 10pt;
+            }
+            QPushButton {
+                background-color: #3498DB;
+                color: white;
+                border-radius: 3px;
+                padding: 6px 12px;
+                font-weight: bold;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #2980B9;
+            }
+            QPushButton:pressed {
+                background-color: #1F618D;
+            }
+            QPushButton:disabled {
+                background-color: #BDC3C7;
+                color: #7F8C8D;
+            }
+        """)
+
+        # Специфічні стилі для статусів
+        if self.is_finished:
+            self.status_value.setStyleSheet("color: #27AE60; font-weight: bold;")
+        else:
+            self.status_value.setStyleSheet("color: #E74C3C; font-weight: bold;")
+
+        # Стилі для кнопок з різними функціями
+        self.start_button.setStyleSheet("""
+            QPushButton {
+                background-color: #2ECC71;
+                color: white;
+                border-radius: 3px;
+                padding: 6px 12px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #27AE60;
+            }
+            QPushButton:pressed {
+                background-color: #1E8449;
+            }
+            QPushButton:disabled {
+                background-color: #BDC3C7;
+                color: #7F8C8D;
+            }
+        """)
+
+        self.evaluate_button.setStyleSheet("""
+            QPushButton {
+                background-color: #3498DB;
+                color: white;
+                border-radius: 3px;
+                padding: 6px 12px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2980B9;
+            }
+            QPushButton:pressed {
+                background-color: #1F618D;
+            }
+            QPushButton:disabled {
+                background-color: #BDC3C7;
+                color: #7F8C8D;
+            }
+        """)
+
+        self.inherit_button.setStyleSheet("""
+            QPushButton {
+                background-color: #9B59B6;
+                color: white;
+                border-radius: 3px;
+                padding: 6px 12px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #8E44AD;
+            }
+            QPushButton:pressed {
+                background-color: #6C3483;
+            }
+            QPushButton:disabled {
+                background-color: #BDC3C7;
+                color: #7F8C8D;
+            }
+        """)
+
+        self.save_button.setStyleSheet("""
+            QPushButton {
+                background-color: #F39C12;
+                color: white;
+                border-radius: 3px;
+                padding: 6px 12px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #E67E22;
+            }
+            QPushButton:pressed {
+                background-color: #D35400;
+            }
+            QPushButton:disabled {
+                background-color: #BDC3C7;
+                color: #7F8C8D;
+            }
+        """)

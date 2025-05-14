@@ -2,6 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QListWidgetItem, QListWidget, QLabel, QVBoxLayout, QWidget
 
 
+
 class NodeInspector(QWidget):
     """Інспектор вузлів - відображає список вузлів та дозволяє ними керувати."""
 
