@@ -39,6 +39,7 @@ class InspectorController(BasicController):
             item = self.nodes_list.item(i)
             if item.data(Qt.UserRole) == node.id:
                 item.setText(node.get_name())
+                self.node_controller.update_experiment_name.emit(node.id, node.get_name())
                 break
 
     def on_item_clicked(self, item):

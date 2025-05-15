@@ -25,6 +25,7 @@ class NodeController:
             node_created = pyqtSignal(object)  # Сигнал створення вузла
             node_deleted = pyqtSignal(int)  # Сигнал видалення вузла (передаємо ID)
             node_renamed = pyqtSignal(object)  # Сигнал перейменування вузла
+            update_experiment_name = pyqtSignal(int, str)
             nodeInfoOpened = pyqtSignal(int)  # Сигнал відкриття інформації про вузол
             experiment_inherited = pyqtSignal(int)  # Сигнал для успадкування експерименту
 
@@ -34,6 +35,7 @@ class NodeController:
         self.node_renamed = self.signals.node_renamed
         self.nodeInfoOpened = self.signals.nodeInfoOpened
         self.experiment_inherited = self.signals.experiment_inherited
+        self.update_experiment_name = self.signals.update_experiment_name
 
         self.scene.installEventFilter(view)
         view.mousePressEvent = self._view_mouse_press

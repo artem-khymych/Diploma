@@ -36,6 +36,9 @@ class ExperimentManager(QObject):
         self.current_node = node
         self._check_experiment_data()
 
+    def update_name(self, id, name):
+        self.experiments[id].name = name
+
     def get_ml_model(self, task, model, params):
         self.current_model = model
         self.current_params = params

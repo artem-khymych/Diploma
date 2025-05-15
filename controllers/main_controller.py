@@ -48,6 +48,8 @@ class MainController:
         self.view.open_action.triggered.connect(lambda: self.workspace_manager.open_project(self.view))
         self.view.new_action.triggered.connect(self.workspace_manager.new_project)
 
+        self.inspector_controller.node_controller.update_experiment_name.connect(self.experiment_manager.update_name)
+
 
 
     def _show_experiment_settings_dialog(self, node_id):
