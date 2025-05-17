@@ -2,7 +2,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QVBoxLayout, QGridLayout, QGroupBox, QLabel, QComboBox, QPushButton, QLineEdit, QTextEdit, \
     QHBoxLayout, QMessageBox, QWidget
 
-from project.logic.modules.nn_model_types import NNModelType, TaskType, ModelTaskRegistry
+from project.logic.evaluation.task_register import NNModelType, ModelTaskRegistry
 
 
 class NeuralNetworkLoaderTabWidget(QWidget):

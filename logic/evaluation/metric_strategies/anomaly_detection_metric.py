@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import spearmanr, kendalltau
 from sklearn.neighbors import NearestNeighbors
-from project.logic.evaluation.metric_strategy import MetricStrategy
+from project.logic.evaluation.metric_strategies.metric_strategy import MetricStrategy
 
 class AnomalyDetectionMetric(MetricStrategy):
     def evaluate(self, X, anomaly_scores, y_true=None, contamination=0.1):

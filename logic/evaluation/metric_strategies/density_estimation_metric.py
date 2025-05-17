@@ -1,10 +1,9 @@
 import numpy as np
-import pandas as pd
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 from sklearn.neighbors import NearestNeighbors
 from scipy.stats import entropy
 from sklearn.decomposition import PCA
-from project.logic.evaluation.metric_strategy import MetricStrategy
+from project.logic.evaluation.metric_strategies.metric_strategy import MetricStrategy
 
 
 class DensityEstimationMetric(MetricStrategy):

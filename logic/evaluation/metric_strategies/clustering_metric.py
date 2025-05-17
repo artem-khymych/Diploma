@@ -1,6 +1,6 @@
 import numpy as np
 
-from project.logic.evaluation.metric_strategy import MetricStrategy
+from project.logic.evaluation.metric_strategies.metric_strategy import MetricStrategy
 from sklearn.metrics import (
     silhouette_score, calinski_harabasz_score, davies_bouldin_score,
     adjusted_rand_score, normalized_mutual_info_score, adjusted_mutual_info_score,

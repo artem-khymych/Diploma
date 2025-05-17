@@ -5,7 +5,7 @@ from sklearn.metrics import (
     explained_variance_score, max_error
 )
 
-from project.logic.evaluation.metric_strategy import MetricStrategy
+from project.logic.evaluation.metric_strategies.metric_strategy import MetricStrategy
 
 
 class RegressionMetric(MetricStrategy):

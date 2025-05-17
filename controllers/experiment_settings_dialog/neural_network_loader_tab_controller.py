@@ -1,13 +1,11 @@
 import os
 
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import (QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
-                             QFileDialog, QComboBox, QMessageBox, QApplication, QLineEdit,
-                             QGridLayout, QGroupBox, QTextEdit)
+from PyQt5.QtWidgets import (QFileDialog, QMessageBox)
 import tensorflow as tf
 
 from project.controllers.experiment_settings_dialog.tab_controller import TabController
-from project.logic.modules.nn_model_types import NNModelType, ModelTaskRegistry, MLTaskType, TaskType
+from project.logic.evaluation.task_register import TaskType
 
 
 class NeuralNetworkLoaderTabController(TabController):

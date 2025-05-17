@@ -1,17 +1,17 @@
-from typing import List, Set, Dict
-from collections.abc import Iterator, Callable
+from typing import Dict
+from collections.abc import Callable
 
 from PyQt5.QtCore import pyqtSignal, QObject
 from pandas import DataFrame
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 
-from project.logic.evaluation.anomaly_detection_metric import AnomalyDetectionMetric
-from project.logic.evaluation.classification_metric import ClassificationMetric
-from project.logic.evaluation.clustering_metric import ClusteringMetric
-from project.logic.evaluation.density_estimation_metric import DensityEstimationMetric
-from project.logic.evaluation.dim_reduction_metric import DimReduction
-from project.logic.evaluation.metric_strategy import MetricStrategy, TimeSeriesMetric
-from project.logic.evaluation.regression_metric import RegressionMetric
+from project.logic.evaluation.metric_strategies.anomaly_detection_metric import AnomalyDetectionMetric
+from project.logic.evaluation.metric_strategies.classification_metric import ClassificationMetric
+from project.logic.evaluation.metric_strategies.clustering_metric import ClusteringMetric
+from project.logic.evaluation.metric_strategies.density_estimation_metric import DensityEstimationMetric
+from project.logic.evaluation.metric_strategies.dim_reduction_metric import DimReduction
+from project.logic.evaluation.metric_strategies.metric_strategy import MetricStrategy, TimeSeriesMetric
+from project.logic.evaluation.metric_strategies.regression_metric import RegressionMetric
 from project.logic.experiment.input_data_params import InputDataParams
 from project.logic.modules import task_names
 import time

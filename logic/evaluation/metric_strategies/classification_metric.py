@@ -1,13 +1,11 @@
 import numpy as np
-import pandas as pd
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
-    confusion_matrix, roc_auc_score, precision_recall_curve,
-    average_precision_score, log_loss, cohen_kappa_score,
-    matthews_corrcoef, balanced_accuracy_score, mean_squared_error, r2_score, classification_report
+    confusion_matrix, roc_auc_score, average_precision_score, log_loss, cohen_kappa_score,
+    matthews_corrcoef, balanced_accuracy_score
 )
 
-from project.logic.evaluation.metric_strategy import MetricStrategy
+from project.logic.evaluation.metric_strategies.metric_strategy import MetricStrategy
 
 
 class ClassificationMetric(MetricStrategy):

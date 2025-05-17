@@ -1,20 +1,12 @@
-import os
 import time
-from enum import Enum
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional
 import tensorflow as tf
-from sklearn.impute import SimpleImputer
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import History
-import pandas as pd
 import numpy as np
 
 from project.logic.experiment.experiment import Experiment
-from project.logic.experiment.input_data_params import InputDataParams
 from project.logic.experiment.nn_input_data_params import NeuralNetInputDataParams
-from project.logic.modules.nn_model_types import ModelTaskRegistry, TaskType, NNMetricFactory, get_nn_metric, \
+from project.logic.evaluation.task_register import TaskType, NNMetricFactory, get_nn_metric, \
     NNModelType
 
 

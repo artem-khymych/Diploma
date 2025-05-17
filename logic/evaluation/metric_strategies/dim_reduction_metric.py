@@ -6,7 +6,7 @@ from scipy.spatial.distance import pdist, squareform
 from scipy.stats import pearsonr, spearmanr
 from sklearn.manifold import trustworthiness
 
-from project.logic.evaluation.metric_strategy import MetricStrategy
+from project.logic.evaluation.metric_strategies.metric_strategy import MetricStrategy
 
 
 class DimReduction(MetricStrategy):

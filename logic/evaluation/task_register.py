@@ -1,6 +1,6 @@
 from enum import Enum
 from dataclasses import dataclass
-from typing import Dict, List, Set, Type
+from typing import Set, Type
 
 
 class NNModelType(Enum):
@@ -42,13 +42,9 @@ class ModelTaskRegistry:
     def _initialize_registry(self):
         """Ініціалізує реєстр стандартними відображеннями завдань і моделей"""
         # Імпортуємо всі необхідні класи метрик
-        from project.logic.evaluation.classification_metric import ClassificationMetric
-        from project.logic.evaluation.regression_metric import RegressionMetric
-        from project.logic.evaluation.clustering_metric import ClusteringMetric
-        from project.logic.evaluation.dim_reduction_metric import DimReduction
-        from project.logic.evaluation.anomaly_detection_metric import AnomalyDetectionMetric
-        from project.logic.evaluation.density_estimation_metric import DensityEstimationMetric
-        from project.logic.evaluation.metric_strategy import TimeSeriesMetric
+        from project.logic.evaluation.metric_strategies.classification_metric import ClassificationMetric
+        from project.logic.evaluation.metric_strategies.regression_metric import RegressionMetric
+        from project.logic.evaluation.metric_strategies.metric_strategy import TimeSeriesMetric
 
         # Додаємо всі завдання до GENERIC типу моделі з відповідними метриками
         self.register_task(
@@ -207,11 +203,13 @@ def get_nn_metric(model_type_str: str, task_type_str: str):
     # Створюємо фабрику та отримуємо метрику
     factory = NNMetricFactory()
     return factory.create_metric(model_type, task_type)
+
+
 ########################################################################################################################
-from enum import Enum, auto
+from enum import Enum
 from typing import Dict, List, Type
 from dataclasses import dataclass
-from project.logic.evaluation.metric_strategy import MetricStrategy
+from project.logic.evaluation.metric_strategies.metric_strategy import MetricStrategy
 
 
 class MLTaskType(Enum):
@@ -247,13 +245,13 @@ class MLTaskMetricRegistry:
     def _initialize_registry(self):
         """Ініціалізує реєстр стандартними відображеннями завдань і метрик"""
         # Імпортуємо всі необхідні класи метрик
-        from project.logic.evaluation.classification_metric import ClassificationMetric
-        from project.logic.evaluation.regression_metric import RegressionMetric
-        from project.logic.evaluation.clustering_metric import ClusteringMetric
-        from project.logic.evaluation.dim_reduction_metric import DimReduction
-        from project.logic.evaluation.anomaly_detection_metric import AnomalyDetectionMetric
-        from project.logic.evaluation.density_estimation_metric import DensityEstimationMetric
-        from project.logic.evaluation.metric_strategy import TimeSeriesMetric
+        from project.logic.evaluation.metric_strategies.classification_metric import ClassificationMetric
+        from project.logic.evaluation.metric_strategies.regression_metric import RegressionMetric
+        from project.logic.evaluation.metric_strategies.clustering_metric import ClusteringMetric
+        from project.logic.evaluation.metric_strategies.dim_reduction_metric import DimReduction
+        from project.logic.evaluation.metric_strategies.anomaly_detection_metric import AnomalyDetectionMetric
+        from project.logic.evaluation.metric_strategies.density_estimation_metric import DensityEstimationMetric
+        from project.logic.evaluation.metric_strategies.metric_strategy import TimeSeriesMetric
 
         # Реєструємо метрики для кожного типу завдання
         self.register_metric(
